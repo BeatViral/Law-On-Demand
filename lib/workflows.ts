@@ -74,7 +74,7 @@ export function generateAgreementText(caseRecord: CaseRecord, attorney: Attorney
         : "No upfront retainer is required unless the attorney later presents a custom written fee term accepted by the client.";
 
   return [
-    `Lawyer On Demand ${agreementTypeForFeeModel(area.feeModel).replaceAll("_", " ")}.`,
+    `Law On Demand ${agreementTypeForFeeModel(area.feeModel).replaceAll("_", " ")}.`,
     `Client: ${demoClient.name}. Attorney: ${attorney.name}, ${attorney.firmName}. Matter: ${category?.name ?? caseRecord.matterType}.`,
     "The call before this agreement was a preliminary guidance call only. Full legal representation does not begin from the call itself.",
     feeCopy,

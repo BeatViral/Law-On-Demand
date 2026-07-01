@@ -4,13 +4,13 @@ import "./globals.css";
 const metadataBasePath = process.env.GITHUB_PAGES === "true" ? "/Law-On-Demand" : "";
 
 export const metadata: Metadata = {
-  title: "Lawyer On Demand",
+  title: "Law On Demand",
   description: "Connect with an available attorney in 3 clicks.",
-  applicationName: "Lawyer On Demand",
+  applicationName: "Law On Demand",
   manifest: `${metadataBasePath}/manifest.webmanifest`,
   appleWebApp: {
     capable: true,
-    title: "Lawyer On Demand",
+    title: "Law On Demand",
     statusBarStyle: "black-translucent"
   }
 };

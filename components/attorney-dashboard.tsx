@@ -216,7 +216,7 @@ export function AttorneyDashboard() {
               <CloudUpload className="h-9 w-9 text-cobalt" />
             </div>
             <p className="mt-3 text-sm font-bold leading-6 text-graphite">
-              Lawyer On Demand brings you the client. Export a structured case packet into your existing workflow.
+              Law On Demand brings you the client. Export a structured case packet into your existing workflow.
             </p>
             <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {integrationOptions.map((option) => (

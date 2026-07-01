@@ -198,7 +198,7 @@ export function ClientApp() {
     if (!isStaticDemo) return appPath(`/api/exports?caseId=${caseRecord.id}&format=pdf`);
 
     const packetText = [
-      "Lawyer On Demand Case Packet",
+      "Law On Demand Case Packet",
       `Reference: ${casePacket.reference}`,
       `Client: ${casePacket.client.name}`,
       `Attorney: ${casePacket.attorney.name}`,
@@ -369,7 +369,7 @@ export function ClientApp() {
     <main className="lod-app-root">
       <div className="lod-meta-bar">
         <div className="lod-eyebrow">Production MVP Prototype</div>
-        <h1>Lawyer On Demand</h1>
+        <h1>Law On Demand</h1>
         <p>Client app, attorney dashboard, admin console, and attorney-owned Integration Suite.</p>
       </div>
 
@@ -528,7 +528,7 @@ function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCa
       <div className="lod-home-head">
         <div className="lod-brand-mark">
           <div className="lod-brand-glyph">L</div>
-          <span>Lawyer On Demand</span>
+          <span>Law On Demand</span>
         </div>
         <h1>Tap your legal issue.</h1>
         <p className="lod-sub">Connect with an available attorney in 3 clicks. No waiting, no forms first.</p>
@@ -1001,7 +1001,7 @@ function IntegrationSuiteScreen({
   return (
     <section className="lod-screen is-active">
       <Topbar onBack={onBack} title="Integration Suite" tag="Send case to your software" />
-      <p className="lod-integration-copy">Attorney-owned export destination. Lawyer On Demand brings the client; the attorney's existing software handles the case.</p>
+      <p className="lod-integration-copy">Attorney-owned export destination. Law On Demand brings the client; the attorney's existing software handles the case.</p>
 
       <div className="lod-integration-grid">
         {integrationOptions.map(([abbr, name]) => (
@@ -1307,7 +1307,7 @@ function DashboardFrame({
             </button>
           ))}
           <div className="lod-sidebar-divider" />
-          <div className="lod-sidebar-foot">Lawyer On Demand</div>
+          <div className="lod-sidebar-foot">Law On Demand</div>
         </aside>
         <section className="lod-dash-main">{children}</section>
       </div>

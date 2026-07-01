@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 
   if (format === "pdf") {
     const pdf = buildSimplePdf([
-      "Lawyer On Demand Case Packet",
+      "Law On Demand Case Packet",
       `Reference: ${packet.reference}`,
       `Client: ${packet.client.name}`,
       `Client phone: ${packet.client.phone}`,
