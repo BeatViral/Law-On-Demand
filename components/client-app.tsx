@@ -14,7 +14,7 @@ import {
   Video,
   X
 } from "lucide-react";
-import { attorneys, demoClient, getAvailableAttorneys, legalCategories } from "@/lib/data";
+import { demoClient, getAvailableAttorneys, legalCategories } from "@/lib/data";
 import { appPath, isStaticDemo } from "@/lib/routing";
 import {
   acceptEngagement,
@@ -29,7 +29,6 @@ import type { Agreement, Attorney, CasePacket, CaseRecord, LegalCategory, Paymen
 import { cn, formatCurrency } from "@/lib/utils";
 
 type ClientStep = "home" | "attorneys" | "call" | "agreement" | "payment" | "acceptance" | "confirmed" | "packet" | "integrations";
-type AppMode = "client" | "attorney" | "admin";
 type AttorneyDashStep = "availability" | "video" | "agreement" | "case" | "integrations";
 type AdminDashStep = "overview" | "attorneys" | "cases";
 
@@ -159,11 +158,8 @@ async function postJson<T>(path: string, body: unknown, fallback: () => T): Prom
   }
 }
 
-export function ClientApp({ initialMode = "client" }: { initialMode?: AppMode } = {}) {
-  const [mode, setMode] = useState<AppMode>(initialMode);
+export function ClientApp() {
   const [step, setStep] = useState<ClientStep>("home");
-  const [attorneyDashStep, setAttorneyDashStep] = useState<AttorneyDashStep>("availability");
-  const [adminDashStep, setAdminDashStep] = useState<AdminDashStep>("overview");
   const [selectedCategory, setSelectedCategory] = useState<LegalCategory | null>(null);
   const [selectedAttorney, setSelectedAttorney] = useState<Attorney | null>(null);
   const [bioAttorney, setBioAttorney] = useState<Attorney | null>(null);
@@ -218,19 +214,8 @@ export function ClientApp({ initialMode = "client" }: { initialMode?: AppMode } 
   }, [step]);
 
   function openClientStep(nextStep: ClientStep) {
-    setMode("client");
     setStep(nextStep);
     resetScroll();
-  }
-
-  function openAppMode(nextMode: AppMode) {
-    setMode(nextMode);
-    resetScroll();
-  }
-
-  function openAttorneyPortal() {
-    setAttorneyDashStep("availability");
-    openAppMode("attorney");
   }
 
   function resetEngagementState() {
@@ -372,173 +357,125 @@ export function ClientApp({ initialMode = "client" }: { initialMode?: AppMode } 
     setBusy(false);
   }
 
-  const activeAttorney = selectedAttorney ?? attorneys[0];
-  const activeCategory = selectedCategory ?? appCategories[0];
-
   return (
-    <main className={cn("lod-app-root", mode !== "client" && "lod-app-root--workspace")}>
-      <div className="lod-meta-bar">
-        <div className="lod-eyebrow">Production MVP Prototype</div>
-        <h1>Law On Demand</h1>
-        <p>Client app, attorney dashboard, admin console, and attorney-owned Integration Suite.</p>
+    <main className="lod-app-root">
+      <div className="lod-device">
+        <div className="lod-notch" />
+
+        {step === "home" && <HomeScreen onChooseCategory={chooseCategory} />}
+
+        {step === "attorneys" && selectedCategory && (
+          <AttorneysScreen
+            category={selectedCategory}
+            attorneys={availableAttorneys}
+            busy={busy}
+            onBack={() => openClientStep("home")}
+            onCall={connectNow}
+            onBio={setBioAttorney}
+          />
+        )}
+
+        {step === "call" && selectedAttorney && selectedCategory && (
+          <CallScreen
+            attorney={selectedAttorney}
+            category={selectedCategory}
+            elapsed={elapsed}
+            busy={busy}
+            onHire={beginHire}
+            onBack={() => openClientStep("attorneys")}
+            onEnd={() => openClientStep("attorneys")}
+          />
+        )}
+
+        {step === "agreement" && selectedAttorney && selectedCategory && caseRecord && (
+          <AgreementScreen
+            attorney={selectedAttorney}
+            category={selectedCategory}
+            caseRecord={caseRecord}
+            typedSignature={typedSignature}
+            consent={consent}
+            busy={busy}
+            onBack={() => openClientStep("call")}
+            onSignatureChange={setTypedSignature}
+            onConsentChange={setConsent}
+            onContinue={signAgreement}
+          />
+        )}
+
+        {step === "payment" && selectedAttorney && selectedCategory && caseRecord && selectedPracticeArea && (
+          <PaymentScreen
+            attorney={selectedAttorney}
+            category={selectedCategory}
+            retainerAmount={selectedPracticeArea.retainerAmount}
+            busy={busy}
+            onBack={() => openClientStep("agreement")}
+            onPay={payRetainer}
+          />
+        )}
+
+        {step === "acceptance" && selectedAttorney && selectedCategory && caseRecord && agreement && (
+          <AcceptanceScreen
+            attorney={selectedAttorney}
+            caseRecord={caseRecord}
+            agreement={agreement}
+            payment={payment}
+            busy={busy}
+            onAccept={acceptEngagementNow}
+          />
+        )}
+
+        {step === "confirmed" && selectedAttorney && selectedCategory && caseRecord && agreement && casePacket && (
+          <ConfirmedScreen
+            attorney={selectedAttorney}
+            caseRecord={caseRecord}
+            casePacket={casePacket}
+            payment={payment}
+            onPacket={() => openClientStep("packet")}
+            onHome={() => openClientStep("home")}
+          />
+        )}
+
+        {step === "packet" && (
+          <CasePacketScreen
+            attorney={selectedAttorney}
+            category={selectedCategory}
+            caseRecord={caseRecord}
+            agreement={agreement}
+            payment={payment}
+            casePacket={casePacket}
+            packetJsonHref={packetJsonHref}
+            packetPdfHref={packetPdfHref}
+            onBack={() => openClientStep("confirmed")}
+            onIntegrations={() => openClientStep("integrations")}
+            onHome={() => openClientStep("home")}
+          />
+        )}
+
+        {step === "integrations" && (
+          <IntegrationSuiteScreen
+            casePacket={casePacket}
+            selectedIntegration={selectedIntegration}
+            exported={exported}
+            onBack={() => openClientStep("packet")}
+            onSelect={setSelectedIntegration}
+            onExport={() => setExported(true)}
+          />
+        )}
+
+        {bioAttorney && selectedCategory && (
+          <FullBioSheet
+            attorney={bioAttorney}
+            category={selectedCategory}
+            onClose={() => setBioAttorney(null)}
+            onCall={() => connectNow(bioAttorney)}
+          />
+        )}
       </div>
-
-      <div className="lod-mode-tabs" aria-label="App mode">
-        <ModeTab active={mode === "client"} onClick={() => openAppMode("client")}>Client App</ModeTab>
-        <ModeTab active={mode === "attorney"} onClick={openAttorneyPortal}>Attorney Portal</ModeTab>
-        <ModeTab active={mode === "admin"} onClick={() => openAppMode("admin")}>Admin Console</ModeTab>
-      </div>
-
-      {mode === "client" && (
-        <div className="lod-device">
-          <div className="lod-notch" />
-
-          {step === "home" && <HomeScreen onChooseCategory={chooseCategory} onAttorneyPortal={openAttorneyPortal} />}
-
-          {step === "attorneys" && selectedCategory && (
-            <AttorneysScreen
-              category={selectedCategory}
-              attorneys={availableAttorneys}
-              busy={busy}
-              onBack={() => openClientStep("home")}
-              onCall={connectNow}
-              onBio={setBioAttorney}
-            />
-          )}
-
-          {step === "call" && selectedAttorney && selectedCategory && (
-            <CallScreen
-              attorney={selectedAttorney}
-              category={selectedCategory}
-              elapsed={elapsed}
-              busy={busy}
-              onHire={beginHire}
-              onBack={() => openClientStep("attorneys")}
-              onEnd={() => openClientStep("attorneys")}
-            />
-          )}
-
-          {step === "agreement" && selectedAttorney && selectedCategory && caseRecord && (
-            <AgreementScreen
-              attorney={selectedAttorney}
-              category={selectedCategory}
-              caseRecord={caseRecord}
-              typedSignature={typedSignature}
-              consent={consent}
-              busy={busy}
-              onBack={() => openClientStep("call")}
-              onSignatureChange={setTypedSignature}
-              onConsentChange={setConsent}
-              onContinue={signAgreement}
-            />
-          )}
-
-          {step === "payment" && selectedAttorney && selectedCategory && caseRecord && selectedPracticeArea && (
-            <PaymentScreen
-              attorney={selectedAttorney}
-              category={selectedCategory}
-              retainerAmount={selectedPracticeArea.retainerAmount}
-              busy={busy}
-              onBack={() => openClientStep("agreement")}
-              onPay={payRetainer}
-            />
-          )}
-
-          {step === "acceptance" && selectedAttorney && selectedCategory && caseRecord && agreement && (
-            <AcceptanceScreen
-              attorney={selectedAttorney}
-              caseRecord={caseRecord}
-              agreement={agreement}
-              payment={payment}
-              busy={busy}
-              onAccept={acceptEngagementNow}
-            />
-          )}
-
-          {step === "confirmed" && selectedAttorney && selectedCategory && caseRecord && agreement && casePacket && (
-            <ConfirmedScreen
-              attorney={selectedAttorney}
-              caseRecord={caseRecord}
-              casePacket={casePacket}
-              payment={payment}
-              onPacket={() => openClientStep("packet")}
-              onHome={() => openClientStep("home")}
-            />
-          )}
-
-          {step === "packet" && (
-            <CasePacketScreen
-              attorney={selectedAttorney}
-              category={selectedCategory}
-              caseRecord={caseRecord}
-              agreement={agreement}
-              payment={payment}
-              casePacket={casePacket}
-              packetJsonHref={packetJsonHref}
-              packetPdfHref={packetPdfHref}
-              onBack={() => openClientStep("confirmed")}
-              onIntegrations={() => openClientStep("integrations")}
-              onHome={() => openClientStep("home")}
-            />
-          )}
-
-          {step === "integrations" && (
-            <IntegrationSuiteScreen
-              casePacket={casePacket}
-              selectedIntegration={selectedIntegration}
-              exported={exported}
-              onBack={() => openClientStep("packet")}
-              onSelect={setSelectedIntegration}
-              onExport={() => setExported(true)}
-            />
-          )}
-
-          {bioAttorney && selectedCategory && (
-            <FullBioSheet
-              attorney={bioAttorney}
-              category={selectedCategory}
-              onClose={() => setBioAttorney(null)}
-              onCall={() => connectNow(bioAttorney)}
-            />
-          )}
-        </div>
-      )}
-
-      {mode === "attorney" && (
-        <AttorneyDashboard
-          step={attorneyDashStep}
-          attorney={activeAttorney}
-          category={activeCategory}
-          caseRecord={caseRecord}
-          agreement={agreement}
-          payment={payment}
-          casePacket={casePacket}
-          onStep={setAttorneyDashStep}
-        />
-      )}
-
-      {mode === "admin" && (
-        <AdminDashboard step={adminDashStep} onStep={setAdminDashStep} />
-      )}
     </main>
   );
 }
 
-function ModeTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button className={cn("lod-mode-tab", active && "is-active")} onClick={onClick}>
-      {children}
-    </button>
-  );
-}
-
-function HomeScreen({
-  onChooseCategory,
-  onAttorneyPortal
-}: {
-  onChooseCategory: (category: LegalCategory) => void;
-  onAttorneyPortal: () => void;
-}) {
+function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCategory) => void }) {
   return (
     <section className="lod-screen is-active">
       <div className="lod-home-head">
@@ -569,12 +506,6 @@ function HomeScreen({
             </button>
           );
         })}
-      </div>
-
-      <div className="lod-home-foot">
-        <button className="lod-home-link" type="button" onClick={onAttorneyPortal} aria-label="Open attorney portal">
-          Attorney Portal
-        </button>
       </div>
     </section>
   );
