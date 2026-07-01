@@ -561,7 +561,9 @@ function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCa
       </div>
 
       <div className="lod-home-foot">
-        <span>Attorney Login</span>
+        <a className="lod-home-link" href={appPath("/attorney/")} aria-label="Open attorney portal">
+          Attorney Portal
+        </a>
       </div>
     </section>
   );

@@ -354,7 +354,20 @@ img {
   text-align: center;
   font-size: 12px;
   color: var(--graphite);
-  text-decoration: underline;
+}
+
+.lod-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border-radius: 999px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  color: var(--navy-deep);
+  background: rgba(255, 255, 255, 0.78);
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .lod-topbar {
@@ -1723,6 +1736,13 @@ img {
 
 .lod-home-foot {
   font-weight: 800;
+}
+
+.lod-home-link {
+  min-height: 40px;
+  padding: 9px 16px;
+  border-color: rgba(11, 28, 61, 0.1);
+  box-shadow: 0 12px 26px -22px rgba(11, 28, 61, 0.9);
 }
 
 .lod-topbar {
