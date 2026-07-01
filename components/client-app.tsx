@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
-  BadgeCheck,
-  BriefcaseBusiness,
   Check,
   ChevronRight,
   CircleDollarSign,
@@ -12,15 +10,8 @@ import {
   Download,
   FileSignature,
   FileText,
-  Home,
-  Landmark,
-  PhoneCall,
   PlugZap,
-  ShieldCheck,
-  UserRound,
-  UserRoundCheck,
   Video,
-  WalletCards,
   X
 } from "lucide-react";
 import { attorneys, demoClient, getAvailableAttorneys, legalCategories } from "@/lib/data";
@@ -36,23 +27,11 @@ import {
 } from "@/lib/workflows";
 import type { Agreement, Attorney, CasePacket, CaseRecord, LegalCategory, Payment, VideoCall } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
-import { Button } from "./ui/button";
 
-type Step =
-  | "home"
-  | "attorneys"
-  | "call"
-  | "agreement"
-  | "payment"
-  | "acceptance"
-  | "confirmed"
-  | "packet"
-  | "integrations"
-  | "calls"
-  | "cases"
-  | "profile"
-  | "attorney-dashboard"
-  | "admin-dashboard";
+type ClientStep = "home" | "attorneys" | "call" | "agreement" | "payment" | "acceptance" | "confirmed" | "packet" | "integrations";
+type AppMode = "client" | "attorney" | "admin";
+type AttorneyDashStep = "availability" | "video" | "agreement" | "case" | "integrations";
+type AdminDashStep = "overview" | "attorneys" | "cases";
 
 type AcceptanceResponse = {
   caseRecord: CaseRecord;
@@ -66,12 +45,31 @@ const appCategories = urgentCategoryIds
   .map((id) => legalCategories.find((category) => category.id === id))
   .filter(Boolean) as LegalCategory[];
 
+const integrationOptions = [
+  ["Cl", "Clio"],
+  ["MC", "MyCase"],
+  ["PP", "PracticePanther"],
+  ["FV", "Filevine"],
+  ["LM", "Lawmatics"],
+  ["SB", "Smokeball"],
+  ["CP", "CASEpeer"],
+  ["Zp", "Zapier"],
+  ["Mk", "Make"],
+  ["PDF", "PDF Export"],
+  ["Mail", "Email Export"]
+];
+
+function resetScroll() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function secondsToClock(seconds: number) {
-  const minutes = Math.floor(seconds / 60)
+  const remaining = Math.max(0, 300 - seconds);
+  const minutes = Math.floor(remaining / 60)
     .toString()
     .padStart(2, "0");
-  const remaining = (seconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${remaining}`;
+  const secs = (remaining % 60).toString().padStart(2, "0");
+  return `${minutes}:${secs}`;
 }
 
 function attorneyInitials(name: string) {
@@ -83,45 +81,65 @@ function attorneyInitials(name: string) {
     .toUpperCase();
 }
 
-function categoryTone(category: LegalCategory) {
-  if (category.defaultFeeModel === "retainer") return "from-[#ff3d57] via-[#ff7a18] to-[#ffd166]";
-  if (category.defaultFeeModel === "contingency") return "from-[#00c2ff] via-[#2ee59d] to-[#b8ff6a]";
-  return "from-[#155dfc] via-[#02c7ee] to-[#11a36a]";
+function issueGlyph(category: LegalCategory) {
+  if (category.id === "cat_dui") return "DUI";
+  if (category.id === "cat_stop") return "TS";
+  if (category.id === "cat_infraction") return "TI";
+  if (category.id === "cat_auto") return "AA";
+  if (category.id === "cat_injury") return "PI";
+  if (category.id === "cat_criminal") return "CD";
+  return "LO";
+}
+
+function isNoUpfront(category: LegalCategory) {
+  return category.defaultFeeModel === "contingency" || category.defaultFeeModel === "no_retainer";
+}
+
+function categoryKind(category: LegalCategory) {
+  return isNoUpfront(category) ? "No upfront retainer" : "Retainer required";
+}
+
+function categoryTileClass(category: LegalCategory) {
+  return isNoUpfront(category) ? "lod-issue-tile lod-issue-tile--contingency" : "lod-issue-tile lod-issue-tile--retainer";
 }
 
 function feeTypeLabel(attorney: Attorney, category: LegalCategory) {
   const area = getPracticeArea(attorney, category.id);
   if (area.feeModel === "retainer") return "Retainer Required";
-  if (area.feeModel === "contingency") return "Contingency / No Upfront Retainer";
-  if (area.feeModel === "no_retainer") return "No Upfront Retainer";
-  return area.customFeeText ?? "Custom Fee Terms";
+  if (area.feeModel === "contingency") return "Contingency / No upfront retainer";
+  if (area.feeModel === "no_retainer") return "No upfront retainer";
+  return area.customFeeText ?? "Custom fee terms";
 }
 
-function feeDetail(attorney: Attorney, category: LegalCategory) {
+function feeTag(attorney: Attorney, category: LegalCategory) {
   const area = getPracticeArea(attorney, category.id);
-  if (area.feeModel === "retainer") return `${formatCurrency(area.retainerAmount)} retainer`;
-  if (area.feeModel === "contingency") return `${area.contingencyPercentage ?? 33}% contingency`;
-  if (area.feeModel === "no_retainer") return "No upfront charge";
-  return area.customFeeText ?? "Attorney review";
+  if (area.feeModel === "retainer") return `Retainer ${formatCurrency(area.retainerAmount)}`;
+  if (area.feeModel === "contingency") return "No upfront retainer";
+  if (area.feeModel === "no_retainer") return "No upfront retainer";
+  return area.customFeeText ?? "Fee review";
 }
 
 function agreementTitle(caseRecord: CaseRecord | null) {
   if (!caseRecord) return "Agreement";
   if (caseRecord.feeModel === "retainer") return "Retainer Agreement";
-  if (caseRecord.feeModel === "contingency") return "Contingency / No-Retainer Agreement";
+  if (caseRecord.feeModel === "contingency") return "Contingency Fee Agreement";
   if (caseRecord.feeModel === "no_retainer") return "No-Upfront-Retainer Agreement";
   return "Attorney-Client Agreement";
 }
 
-function paymentStatusLabel(payment: Payment | null, caseRecord: CaseRecord | null) {
-  if (!caseRecord) return "Not started";
-  if (!requiresRetainer(caseRecord.feeModel)) return "Not required";
-  if (payment?.status === "succeeded") return "Paid";
-  return "Required";
+function agreementCopy(caseRecord: CaseRecord, attorney: Attorney, category: LegalCategory) {
+  if (caseRecord.feeModel === "retainer") {
+    return `This Retainer Agreement is entered into between ${demoClient.name} and ${attorney.firmName} for ${category.name}. Full representation begins only after electronic signature, successful retainer payment, and attorney acceptance.`;
+  }
+
+  return `This Contingency Fee Agreement is entered into between ${demoClient.name} and ${attorney.firmName} for ${category.name}. No upfront retainer is required. Full representation begins only after electronic signature and attorney acceptance.`;
 }
 
-function resetScroll() {
-  window.scrollTo({ top: 0, behavior: "smooth" });
+function paymentStatusLabel(payment: Payment | null, caseRecord: CaseRecord | null) {
+  if (!caseRecord) return "Not started";
+  if (!requiresRetainer(caseRecord.feeModel)) return "No upfront retainer";
+  if (payment?.status === "succeeded") return "Retainer paid";
+  return "Retainer required";
 }
 
 async function postJson<T>(path: string, body: unknown, fallback: () => T): Promise<T> {
@@ -142,7 +160,10 @@ async function postJson<T>(path: string, body: unknown, fallback: () => T): Prom
 }
 
 export function ClientApp() {
-  const [step, setStep] = useState<Step>("home");
+  const [mode, setMode] = useState<AppMode>("client");
+  const [step, setStep] = useState<ClientStep>("home");
+  const [attorneyDashStep, setAttorneyDashStep] = useState<AttorneyDashStep>("availability");
+  const [adminDashStep, setAdminDashStep] = useState<AdminDashStep>("overview");
   const [selectedCategory, setSelectedCategory] = useState<LegalCategory | null>(null);
   const [selectedAttorney, setSelectedAttorney] = useState<Attorney | null>(null);
   const [bioAttorney, setBioAttorney] = useState<Attorney | null>(null);
@@ -152,9 +173,11 @@ export function ClientApp() {
   const [agreement, setAgreement] = useState<Agreement | null>(null);
   const [payment, setPayment] = useState<Payment | null>(null);
   const [casePacket, setCasePacket] = useState<CasePacket | null>(null);
-  const [typedSignature, setTypedSignature] = useState("");
-  const [consent, setConsent] = useState(false);
+  const [typedSignature, setTypedSignature] = useState(demoClient.name);
+  const [consent, setConsent] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState("Clio");
+  const [exported, setExported] = useState(false);
 
   const availableAttorneys = useMemo(() => {
     if (!selectedCategory) return [];
@@ -194,7 +217,8 @@ export function ClientApp() {
     return () => window.clearInterval(timer);
   }, [step]);
 
-  function openStep(nextStep: Step) {
+  function openClientStep(nextStep: ClientStep) {
+    setMode("client");
     setStep(nextStep);
     resetScroll();
   }
@@ -208,19 +232,15 @@ export function ClientApp() {
     setAgreement(null);
     setPayment(null);
     setCasePacket(null);
-    setTypedSignature("");
-    setConsent(false);
-  }
-
-  function startLegalHelp() {
-    openStep("home");
-    window.setTimeout(() => document.getElementById("urgent-categories")?.scrollIntoView({ behavior: "smooth" }), 50);
+    setTypedSignature(demoClient.name);
+    setConsent(true);
+    setExported(false);
   }
 
   function chooseCategory(category: LegalCategory) {
     setSelectedCategory(category);
     resetEngagementState();
-    openStep("attorneys");
+    openClientStep("attorneys");
   }
 
   async function connectNow(attorney: Attorney) {
@@ -252,7 +272,7 @@ export function ClientApp() {
     setVideoCall(call);
     setElapsed(0);
     setBioAttorney(null);
-    openStep("call");
+    openClientStep("call");
     setBusy(false);
   }
 
@@ -268,7 +288,7 @@ export function ClientApp() {
       () => createCaseRecord(selectedAttorney.id, selectedCategory.id)
     );
     setCaseRecord(created);
-    openStep("agreement");
+    openClientStep("agreement");
     setBusy(false);
   }
 
@@ -286,7 +306,7 @@ export function ClientApp() {
     setAgreement(signed);
 
     if (requiresRetainer(caseRecord.feeModel)) {
-      openStep("payment");
+      openClientStep("payment");
     } else {
       const noRetainerPayment = await postJson<Payment>(
         "/api/payments",
@@ -294,7 +314,7 @@ export function ClientApp() {
         () => createPayment(caseRecord, "not_required")
       );
       setPayment(noRetainerPayment);
-      openStep("acceptance");
+      openClientStep("acceptance");
     }
     setBusy(false);
   }
@@ -312,7 +332,7 @@ export function ClientApp() {
       () => createPayment(caseRecord, "succeeded")
     );
     setPayment(processed);
-    openStep("acceptance");
+    openClientStep("acceptance");
     setBusy(false);
   }
 
@@ -338,248 +358,209 @@ export function ClientApp() {
     setCaseRecord(accepted.caseRecord);
     setAgreement(accepted.agreement);
     setCasePacket(accepted.packet);
-    openStep("confirmed");
+    openClientStep("confirmed");
     setBusy(false);
   }
 
+  const activeAttorney = selectedAttorney ?? attorneys[0];
+  const activeCategory = selectedCategory ?? appCategories[0];
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#e8fbff_0%,#f4f7ff_38%,#dbeafe_100%)] text-ink md:grid md:place-items-center md:py-6">
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden bg-[#f7f9fc] shadow-2xl md:min-h-[860px] md:rounded-[34px] md:border-[10px] md:border-[#08111f]">
-        {step === "call" ? (
-          <CallScreen
-            attorney={selectedAttorney}
-            category={selectedCategory}
-            elapsed={elapsed}
-            busy={busy}
-            onHire={beginHire}
-            onBack={() => openStep("attorneys")}
-            onEnd={() => openStep("home")}
-          />
-        ) : (
-          <>
-            <div className="flex-1 pb-28">
-              {step === "home" && <HomeScreen onStart={startLegalHelp} onChooseCategory={chooseCategory} />}
-
-              {step === "attorneys" && selectedCategory && (
-                <AttorneysScreen
-                  category={selectedCategory}
-                  attorneys={availableAttorneys}
-                  busy={busy}
-                  onBack={() => openStep("home")}
-                  onCall={connectNow}
-                  onBio={setBioAttorney}
-                />
-              )}
-
-              {step === "agreement" && selectedAttorney && selectedCategory && caseRecord && (
-                <AgreementScreen
-                  attorney={selectedAttorney}
-                  category={selectedCategory}
-                  caseRecord={caseRecord}
-                  typedSignature={typedSignature}
-                  consent={consent}
-                  busy={busy}
-                  onBack={() => openStep("call")}
-                  onSignatureChange={setTypedSignature}
-                  onConsentChange={setConsent}
-                  onContinue={signAgreement}
-                />
-              )}
-
-              {step === "payment" && selectedAttorney && selectedCategory && caseRecord && selectedPracticeArea && (
-                <PaymentScreen
-                  attorney={selectedAttorney}
-                  category={selectedCategory}
-                  retainerAmount={selectedPracticeArea.retainerAmount}
-                  busy={busy}
-                  onBack={() => openStep("agreement")}
-                  onPay={payRetainer}
-                />
-              )}
-
-              {step === "acceptance" && selectedAttorney && selectedCategory && caseRecord && agreement && (
-                <AcceptanceScreen
-                  attorney={selectedAttorney}
-                  category={selectedCategory}
-                  caseRecord={caseRecord}
-                  agreement={agreement}
-                  payment={payment}
-                  busy={busy}
-                  onAccept={acceptEngagementNow}
-                />
-              )}
-
-              {step === "confirmed" && selectedAttorney && selectedCategory && caseRecord && agreement && casePacket && (
-                <ConfirmedScreen
-                  attorney={selectedAttorney}
-                  category={selectedCategory}
-                  casePacket={casePacket}
-                  onPacket={() => openStep("packet")}
-                  onIntegrations={() => openStep("integrations")}
-                />
-              )}
-
-              {step === "packet" && (
-                <CasePacketScreen
-                  attorney={selectedAttorney}
-                  category={selectedCategory}
-                  caseRecord={caseRecord}
-                  agreement={agreement}
-                  payment={payment}
-                  casePacket={casePacket}
-                  packetJsonHref={packetJsonHref}
-                  packetPdfHref={packetPdfHref}
-                  onIntegrations={() => openStep("integrations")}
-                  onHome={() => openStep("home")}
-                />
-              )}
-
-              {step === "integrations" && (
-                <IntegrationSuiteScreen
-                  casePacket={casePacket}
-                  onBack={() => (casePacket ? openStep("packet") : openStep("profile"))}
-                />
-              )}
-
-              {step === "calls" && (
-                <CallsScreen
-                  attorney={selectedAttorney}
-                  category={selectedCategory}
-                  videoCall={videoCall}
-                  onHome={() => openStep("home")}
-                  onReturn={() => (selectedAttorney && selectedCategory ? openStep("call") : openStep("home"))}
-                />
-              )}
-
-              {step === "cases" && (
-                <CasesScreen casePacket={casePacket} onPacket={() => openStep("packet")} onHome={() => openStep("home")} />
-              )}
-
-              {step === "profile" && (
-                <ProfileScreen
-                  onIntegrations={() => openStep("integrations")}
-                  onAttorneyDashboard={() => openStep("attorney-dashboard")}
-                  onAdminDashboard={() => openStep("admin-dashboard")}
-                />
-              )}
-
-              {step === "attorney-dashboard" && (
-                <DashboardPlaceholder
-                  title="Attorney Dashboard"
-                  eyebrow="Attorney workspace"
-                  body="Availability, incoming calls, signed agreements, payment status, acceptance controls, and case exports live here."
-                  metrics={[
-                    ["Online", "Availability"],
-                    ["3", "Pending accepts"],
-                    ["12", "Open cases"]
-                  ]}
-                  href={appPath("/attorney")}
-                  onBack={() => openStep("profile")}
-                />
-              )}
-
-              {step === "admin-dashboard" && (
-                <DashboardPlaceholder
-                  title="Admin Dashboard"
-                  eyebrow="Platform controls"
-                  body="Manage attorney approvals, category routing, agreement templates, payments, cases, and integration health."
-                  metrics={[
-                    ["8", "Online attorneys"],
-                    ["14", "Live calls"],
-                    ["42", "Signed agreements"]
-                  ]}
-                  href={appPath("/admin")}
-                  onBack={() => openStep("profile")}
-                />
-              )}
-            </div>
-
-            <BottomNav
-              step={step}
-              onHome={() => openStep("home")}
-              onCalls={() => openStep("calls")}
-              onCases={() => (casePacket ? openStep("packet") : openStep("cases"))}
-              onProfile={() => openStep("profile")}
-            />
-          </>
-        )}
-
-        {bioAttorney && selectedCategory && (
-          <FullBioSheet
-            attorney={bioAttorney}
-            category={selectedCategory}
-            onClose={() => setBioAttorney(null)}
-            onCall={() => connectNow(bioAttorney)}
-          />
-        )}
+    <main className="lod-app-root">
+      <div className="lod-meta-bar">
+        <div className="lod-eyebrow">Production MVP Prototype</div>
+        <h1>Lawyer On Demand</h1>
+        <p>Client app, attorney dashboard, admin console, and attorney-owned Integration Suite.</p>
       </div>
+
+      <div className="lod-mode-tabs" aria-label="App mode">
+        <ModeTab active={mode === "client"} onClick={() => setMode("client")}>Client App</ModeTab>
+        <ModeTab active={mode === "attorney"} onClick={() => setMode("attorney")}>Attorney Portal</ModeTab>
+        <ModeTab active={mode === "admin"} onClick={() => setMode("admin")}>Admin Console</ModeTab>
+      </div>
+
+      {mode === "client" && (
+        <div className="lod-device">
+          <div className="lod-notch" />
+
+          {step === "home" && <HomeScreen onChooseCategory={chooseCategory} />}
+
+          {step === "attorneys" && selectedCategory && (
+            <AttorneysScreen
+              category={selectedCategory}
+              attorneys={availableAttorneys}
+              busy={busy}
+              onBack={() => openClientStep("home")}
+              onCall={connectNow}
+              onBio={setBioAttorney}
+            />
+          )}
+
+          {step === "call" && selectedAttorney && selectedCategory && (
+            <CallScreen
+              attorney={selectedAttorney}
+              category={selectedCategory}
+              elapsed={elapsed}
+              busy={busy}
+              onHire={beginHire}
+              onBack={() => openClientStep("attorneys")}
+              onEnd={() => openClientStep("attorneys")}
+            />
+          )}
+
+          {step === "agreement" && selectedAttorney && selectedCategory && caseRecord && (
+            <AgreementScreen
+              attorney={selectedAttorney}
+              category={selectedCategory}
+              caseRecord={caseRecord}
+              typedSignature={typedSignature}
+              consent={consent}
+              busy={busy}
+              onBack={() => openClientStep("call")}
+              onSignatureChange={setTypedSignature}
+              onConsentChange={setConsent}
+              onContinue={signAgreement}
+            />
+          )}
+
+          {step === "payment" && selectedAttorney && selectedCategory && caseRecord && selectedPracticeArea && (
+            <PaymentScreen
+              attorney={selectedAttorney}
+              category={selectedCategory}
+              retainerAmount={selectedPracticeArea.retainerAmount}
+              busy={busy}
+              onBack={() => openClientStep("agreement")}
+              onPay={payRetainer}
+            />
+          )}
+
+          {step === "acceptance" && selectedAttorney && selectedCategory && caseRecord && agreement && (
+            <AcceptanceScreen
+              attorney={selectedAttorney}
+              caseRecord={caseRecord}
+              agreement={agreement}
+              payment={payment}
+              busy={busy}
+              onAccept={acceptEngagementNow}
+            />
+          )}
+
+          {step === "confirmed" && selectedAttorney && selectedCategory && caseRecord && agreement && casePacket && (
+            <ConfirmedScreen
+              attorney={selectedAttorney}
+              caseRecord={caseRecord}
+              casePacket={casePacket}
+              payment={payment}
+              onPacket={() => openClientStep("packet")}
+              onHome={() => openClientStep("home")}
+            />
+          )}
+
+          {step === "packet" && (
+            <CasePacketScreen
+              attorney={selectedAttorney}
+              category={selectedCategory}
+              caseRecord={caseRecord}
+              agreement={agreement}
+              payment={payment}
+              casePacket={casePacket}
+              packetJsonHref={packetJsonHref}
+              packetPdfHref={packetPdfHref}
+              onBack={() => openClientStep("confirmed")}
+              onIntegrations={() => openClientStep("integrations")}
+              onHome={() => openClientStep("home")}
+            />
+          )}
+
+          {step === "integrations" && (
+            <IntegrationSuiteScreen
+              casePacket={casePacket}
+              selectedIntegration={selectedIntegration}
+              exported={exported}
+              onBack={() => openClientStep("packet")}
+              onSelect={setSelectedIntegration}
+              onExport={() => setExported(true)}
+            />
+          )}
+
+          {bioAttorney && selectedCategory && (
+            <FullBioSheet
+              attorney={bioAttorney}
+              category={selectedCategory}
+              onClose={() => setBioAttorney(null)}
+              onCall={() => connectNow(bioAttorney)}
+            />
+          )}
+        </div>
+      )}
+
+      {mode === "attorney" && (
+        <AttorneyDashboard
+          step={attorneyDashStep}
+          attorney={activeAttorney}
+          category={activeCategory}
+          caseRecord={caseRecord}
+          agreement={agreement}
+          payment={payment}
+          casePacket={casePacket}
+          onStep={setAttorneyDashStep}
+        />
+      )}
+
+      {mode === "admin" && (
+        <AdminDashboard step={adminDashStep} onStep={setAdminDashStep} />
+      )}
     </main>
   );
 }
 
-function HomeScreen({
-  onStart,
-  onChooseCategory
-}: {
-  onStart: () => void;
-  onChooseCategory: (category: LegalCategory) => void;
-}) {
+function ModeTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
-    <AppScreen className="gap-5">
-      <section className="rounded-[28px] bg-[#09111f] p-5 text-white shadow-[0_24px_70px_rgba(9,17,31,0.24)]">
-        <div className="flex items-center justify-between gap-4">
-          <div className="grid h-12 w-12 place-items-center rounded-[18px] bg-white text-[#09111f]">
-            <Landmark className="h-6 w-6" />
-          </div>
-          <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-black text-emerald-200">
-            Attorneys online
-          </span>
-        </div>
-        <h1 className="mt-5 text-4xl font-black leading-[0.98] tracking-normal">Lawyer On Demand</h1>
-        <p className="mt-3 text-base font-bold leading-6 text-cyan-50">
-          Connect with an available attorney in 3 clicks.
-        </p>
-        <button
-          className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white text-lg font-black text-[#09111f] shadow-lg"
-          onClick={onStart}
-          data-testid="start-help"
-        >
-          <PhoneCall className="h-5 w-5 text-[#155dfc]" />
-          Get Legal Help Now
-        </button>
-      </section>
+    <button className={cn("lod-mode-tab", active && "is-active")} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
 
-      <section id="urgent-categories" className="space-y-3">
-        <div className="flex items-end justify-between gap-3 px-1">
-          <div>
-            <p className="text-xs font-black uppercase text-[#155dfc]">Choose issue</p>
-            <h2 className="text-2xl font-black text-[#09111f]">Urgent legal help</h2>
-          </div>
-          <p className="text-right text-xs font-black text-slate-500">Click 1 of 3</p>
+function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCategory) => void }) {
+  return (
+    <section className="lod-screen is-active">
+      <div className="lod-home-head">
+        <div className="lod-brand-mark">
+          <div className="lod-brand-glyph">L</div>
+          <span>Lawyer On Demand</span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {appCategories.map((category) => (
+        <h1>Tap your legal issue.</h1>
+        <p className="lod-sub">Connect with an available attorney in 3 clicks. No waiting, no forms first.</p>
+      </div>
+
+      <div className="lod-legend">
+        <span><span className="lod-sw lod-sw--navy" />Retainer required</span>
+        <span><span className="lod-sw lod-sw--green" />No upfront retainer</span>
+      </div>
+
+      <div className="lod-tile-grid" id="urgent-categories">
+        {appCategories.map((category) => {
+          const count = getAvailableAttorneys(category.id).length;
+          return (
             <button
-              className="group min-h-36 rounded-[26px] border border-white bg-white p-3 text-left shadow-[0_14px_35px_rgba(15,23,42,0.08)] transition active:scale-[0.98]"
+              className={categoryTileClass(category)}
               key={category.id}
               onClick={() => onChooseCategory(category)}
               data-testid={`category-${category.slug}`}
             >
-              <span
-                className={cn(
-                  "grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-lg",
-                  categoryTone(category)
-                )}
-              >
-                <ShieldCheck className="h-6 w-6" />
-              </span>
-              <span className="mt-4 block text-xl font-black leading-6 text-[#09111f]">{category.name}</span>
-              <span className="mt-2 block text-xs font-bold leading-5 text-slate-500">{category.urgency}</span>
+              <span className="lod-issue-icon">{issueGlyph(category)}</span>
+              <span className="lod-issue-name">{category.name}</span>
+              <span className="lod-issue-count">{count} online</span>
             </button>
-          ))}
-        </div>
-      </section>
-    </AppScreen>
+          );
+        })}
+      </div>
+
+      <div className="lod-home-foot">
+        <span>Attorney Login</span>
+      </div>
+    </section>
   );
 }
 
@@ -599,82 +580,79 @@ function AttorneysScreen({
   onBio: (attorney: Attorney) => void;
 }) {
   return (
-    <AppScreen>
-      <ScreenHeader
-        title="Available Attorneys"
-        subtitle={category.name}
-        eyebrow="Click 2 of 3"
-        onBack={onBack}
-      />
+    <section className="lod-screen is-active">
+      <Topbar onBack={onBack} title={category.name} tag="Tap a photo to connect" />
 
-      <div className="space-y-4">
-        {availableAttorneys.map((attorney) => (
-          <LiveAttorneyCard
+      <div className="lod-results-head">
+        <StatusPill live>{availableAttorneys.length} attorneys available now</StatusPill>
+      </div>
+
+      <div className="lod-attorney-list">
+        {availableAttorneys.map((attorney, index) => (
+          <AttorneyCard
             key={attorney.id}
             attorney={attorney}
             category={category}
+            featured={index === 0}
             busy={busy}
             onCall={() => onCall(attorney)}
             onBio={() => onBio(attorney)}
           />
         ))}
       </div>
-    </AppScreen>
+    </section>
   );
 }
 
-function LiveAttorneyCard({
+function AttorneyCard({
   attorney,
   category,
+  featured,
   busy,
   onCall,
   onBio
 }: {
   attorney: Attorney;
   category: LegalCategory;
+  featured: boolean;
   busy: boolean;
   onCall: () => void;
   onBio: () => void;
 }) {
   return (
-    <article className="rounded-[30px] border border-white bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-      <div className="flex items-start gap-4">
+    <article className={cn("lod-attorney-card", featured && "lod-attorney-card--hero")}>
+      <div className="lod-attorney-row">
         <button
-          className="relative shrink-0"
+          className="lod-photo-wrap"
           onClick={onCall}
           disabled={busy}
           aria-label={`Start video call with ${attorney.name}`}
           data-testid={`call-${attorney.id}`}
         >
-          <AttorneyAvatar attorney={attorney} size="lg" />
-          <span className="absolute bottom-1 right-1 h-5 w-5 rounded-full border-[3px] border-white bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.9)]" />
+          <PhotoRing attorney={attorney} />
+          <span className="lod-photo-badge">●</span>
         </button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h2 className="truncate text-xl font-black leading-6 text-[#09111f]">{attorney.name}</h2>
-              <p className="truncate text-sm font-bold text-slate-500">{attorney.firmName}</p>
-            </div>
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black uppercase text-emerald-700">
-              {attorney.availabilityStatus}
+        <div className="lod-attorney-info">
+          <div className="lod-attorney-name">{attorney.name}</div>
+          <div className="lod-attorney-firm">{attorney.firmName}</div>
+          <div className="lod-tags">
+            <span className="lod-tag">{category.name}</span>
+            <span className={cn("lod-tag", isNoUpfront(category) ? "lod-tag--green" : "lod-tag--fee")}>
+              {feeTag(attorney, category)}
             </span>
-          </div>
-          <div className="mt-3 grid gap-2">
-            <AppFact label="Specialty" value={category.name} />
-            <AppFact label="Fee type" value={feeTypeLabel(attorney, category)} />
+            <span className="lod-tag">{attorney.jurisdictions[0]}</span>
           </div>
         </div>
       </div>
-      <p className="mt-4 text-sm font-bold leading-6 text-slate-600">{attorney.shortBio}</p>
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <button className="text-sm font-black text-[#155dfc]" onClick={onBio}>
-          Full Bio
-        </button>
-        <button className="inline-flex items-center gap-2 rounded-full bg-[#09111f] px-4 py-2 text-sm font-black text-white" onClick={onCall}>
+      <p className="lod-card-summary">{attorney.shortBio}</p>
+      <div className="lod-card-actions">
+        <button className="lod-bio-link" onClick={onBio}>Full Bio</button>
+        <button className="lod-connect-btn" onClick={onCall}>
           <Video className="h-4 w-4" />
-          Tap photo to call
+          Connect Now
         </button>
       </div>
+      <p className="lod-tap-note">Tap photo to call</p>
     </article>
   );
 }
@@ -688,91 +666,38 @@ function CallScreen({
   onBack,
   onEnd
 }: {
-  attorney: Attorney | null;
-  category: LegalCategory | null;
+  attorney: Attorney;
+  category: LegalCategory;
   elapsed: number;
   busy: boolean;
   onHire: () => void;
   onBack: () => void;
   onEnd: () => void;
 }) {
-  if (!attorney || !category) return null;
-
   return (
-    <section className="flex min-h-[100dvh] flex-col bg-[#050914] text-white md:min-h-[840px]">
-      <div className="flex items-center justify-between px-5 pb-3 pt-5">
-        <button
-          className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white"
-          onClick={onBack}
-          aria-label="Choose another attorney"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="text-center">
-          <p className="text-xs font-black uppercase text-cyan-200">Preliminary Guidance Period</p>
-          <p className="text-lg font-black">{secondsToClock(elapsed)}</p>
+    <section className="lod-screen lod-call-screen is-active">
+      <div className="lod-call-stage">
+        <div className="lod-call-top-info">
+          <div className="lod-call-name-tag">
+            <div className="lod-call-name">{attorney.name}</div>
+            <div className="lod-call-cat">{category.name} - Preliminary Guidance</div>
+          </div>
+          <div className="lod-guidance-timer">
+            <div className="lod-guidance-label">Preliminary Guidance Period</div>
+            <div className="lod-guidance-time">{secondsToClock(elapsed)}</div>
+          </div>
         </div>
-        <span className="grid h-11 w-11 place-items-center rounded-full bg-emerald-400/15 text-emerald-200">
-          <BadgeCheck className="h-5 w-5" />
-        </span>
+        <div className="lod-attorney-video-avatar">{attorneyInitials(attorney.name)}</div>
+        <div className="lod-self-video">You</div>
       </div>
-
-      <div className="flex flex-1 flex-col justify-between gap-4 px-4 pb-5">
-        <div className="relative min-h-[410px] flex-1 overflow-hidden rounded-[34px] border border-white/10 bg-[radial-gradient(circle_at_top,#155dfc_0%,#09111f_52%,#020617_100%)] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.38)]">
-          <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:28px_28px]" />
-          <div className="relative flex h-full min-h-[380px] flex-col items-center justify-center text-center">
-            <div className="grid h-32 w-32 place-items-center rounded-full border border-white/20 bg-white/95 text-5xl font-black text-[#09111f] shadow-2xl">
-              {attorneyInitials(attorney.name)}
-            </div>
-            <h1 className="mt-5 text-4xl font-black leading-tight">{attorney.name}</h1>
-            <p className="mt-1 text-base font-bold text-cyan-100">{category.name}</p>
-            <div className="mt-4 rounded-full bg-emerald-400/15 px-4 py-2 text-sm font-black text-emerald-200">
-              Live call connected
-            </div>
-          </div>
-          <div className="absolute bottom-4 right-4 h-28 w-20 overflow-hidden rounded-3xl border border-white/20 bg-white/90 p-2 text-[#09111f] shadow-2xl">
-            <div className="grid h-full place-items-center rounded-2xl bg-slate-100">
-              <div className="text-center">
-                <UserRound className="mx-auto h-7 w-7" />
-                <p className="mt-1 text-[10px] font-black">You</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-[26px] border border-white/10 bg-white/8 p-4 backdrop-blur">
-          <p className="text-xs font-black uppercase text-cyan-200">Disclaimer</p>
-          <p className="mt-2 text-sm font-bold leading-6 text-slate-200">
-            Preliminary guidance only. Full legal representation begins only after you hire the attorney, sign the
-            agreement, complete required payment if applicable, and the attorney accepts the engagement.
-          </p>
-        </div>
-
-        <div className="grid gap-3">
-          <button
-            className="min-h-14 rounded-2xl bg-white text-lg font-black text-[#09111f] shadow-xl disabled:opacity-60"
-            onClick={onHire}
-            disabled={busy}
-            data-testid="hire-now"
-          >
-            Hire Me Now
-          </button>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              className="min-h-[52px] rounded-2xl bg-white/10 px-3 text-sm font-black text-white"
-              onClick={onBack}
-              data-testid="choose-another"
-            >
-              Choose Another Attorney
-            </button>
-            <button
-              className="min-h-[52px] rounded-2xl bg-[#ef4444] px-3 text-sm font-black text-white"
-              onClick={onEnd}
-              data-testid="end-call"
-            >
-              End Call
-            </button>
-          </div>
+      <div className="lod-call-disclaimer">
+        Preliminary guidance only. Full representation begins after you sign, pay if required, and the attorney accepts.
+      </div>
+      <div className="lod-call-actions">
+        <button className="lod-hire-btn" onClick={onHire} disabled={busy} data-testid="hire-now">Hire Me Now</button>
+        <div className="lod-call-row-actions">
+          <button className="lod-switch-attorney" onClick={onBack} data-testid="choose-another">Choose Another Attorney</button>
+          <button className="lod-end-call" onClick={onEnd} data-testid="end-call">End Call</button>
         </div>
       </div>
     </section>
@@ -803,71 +728,62 @@ function AgreementScreen({
   onContinue: () => void;
 }) {
   const retainer = requiresRetainer(caseRecord.feeModel);
+  const area = getPracticeArea(attorney, category.id);
 
   return (
-    <AppScreen>
-      <ScreenHeader title="Agreement" subtitle={category.name} eyebrow="Hire Me Now" onBack={onBack} />
-      <section className="rounded-[30px] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <div className="flex items-start gap-3">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#155dfc] text-white">
-            <FileSignature className="h-6 w-6" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-black leading-7 text-[#09111f]">{agreementTitle(caseRecord)}</h1>
-            <p className="mt-1 text-sm font-bold leading-6 text-slate-500">
-              {attorney.name}, {attorney.firmName}
-            </p>
-          </div>
-        </div>
+    <section className="lod-screen is-active">
+      <Topbar onBack={onBack} title={agreementTitle(caseRecord)} tag="Sign to proceed" />
 
-        <div className="mt-5 rounded-[24px] bg-slate-50 p-4">
-          <p className="text-xs font-black uppercase text-[#155dfc]">Agreement logic</p>
-          <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
-            {retainer
-              ? "This matter requires a retainer after signature before attorney acceptance."
-              : "This matter uses contingency or no-upfront-retainer logic and skips payment after signature."}
-          </p>
-        </div>
+      <div className="lod-sign-summary">
+        <SummaryRow label="Attorney" value={attorney.name} />
+        <SummaryRow label="Matter" value={category.name} />
+        <SummaryRow label="Agreement type" value={agreementTitle(caseRecord)} />
+      </div>
 
-        <label className="mt-5 block">
-          <span className="text-xs font-black uppercase text-slate-500">Signature field</span>
-          <input
-            className="mt-2 min-h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-lg font-black text-[#09111f] outline-none transition focus:border-[#155dfc] focus:ring-4 focus:ring-blue-100"
-            value={typedSignature}
-            onChange={(event) => onSignatureChange(event.target.value)}
-            placeholder={demoClient.name}
-            data-testid="typed-signature"
-          />
-        </label>
+      <span className="lod-field-label">Agreement</span>
+      <div className="lod-agreement-box">{agreementCopy(caseRecord, attorney, category)}</div>
 
-        <label className="mt-4 flex items-start gap-3 rounded-[22px] border border-slate-200 p-4 text-sm font-bold leading-6 text-slate-600">
-          <input
-            className="mt-1 h-5 w-5 accent-[#155dfc]"
-            type="checkbox"
-            checked={consent}
-            onChange={(event) => onConsentChange(event.target.checked)}
-            data-testid="signature-consent"
-          />
-          I consent to electronic signature and understand representation begins only after attorney acceptance.
-        </label>
+      <span className="lod-field-label">Type your full legal name to sign</span>
+      <input
+        className="lod-sig-input"
+        type="text"
+        value={typedSignature}
+        onChange={(event) => onSignatureChange(event.target.value)}
+        placeholder={demoClient.name}
+        data-testid="typed-signature"
+      />
 
+      <label className="lod-consent-row">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(event) => onConsentChange(event.target.checked)}
+          data-testid="signature-consent"
+        />
+        <span>I agree this constitutes my electronic signature and I consent to be bound by this agreement.</span>
+      </label>
+
+      <div className={cn("lod-fee-note", !retainer && "lod-fee-note--green")}>
+        {retainer
+          ? `Retainer required for this matter. Your card will be charged ${formatCurrency(area.retainerAmount)} once signed.`
+          : "No upfront retainer required for this matter."}
+      </div>
+
+      <div className="lod-px lod-bottom-pad">
         <button
-          className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#09111f] text-lg font-black text-white disabled:opacity-50"
+          className="lod-btn-primary"
           onClick={onContinue}
           disabled={!typedSignature.trim() || !consent || busy}
           data-testid="sign-agreement"
         >
-          Continue
-          <ChevronRight className="h-5 w-5" />
+          {retainer ? "Sign & Continue to Payment" : "Sign Agreement"}
         </button>
-      </section>
-    </AppScreen>
+      </div>
+    </section>
   );
 }
 
 function PaymentScreen({
-  attorney,
-  category,
   retainerAmount,
   busy,
   onBack,
@@ -881,38 +797,31 @@ function PaymentScreen({
   onPay: () => void;
 }) {
   return (
-    <AppScreen>
-      <ScreenHeader title="Payment" subtitle={category.name} eyebrow="Retainer required" onBack={onBack} />
-      <section className="rounded-[30px] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <div className="grid h-16 w-16 place-items-center rounded-3xl bg-amber-100 text-amber-700">
-          <WalletCards className="h-8 w-8" />
-        </div>
-        <h1 className="mt-5 text-3xl font-black leading-tight text-[#09111f]">Pay retainer to continue.</h1>
-        <p className="mt-2 text-sm font-bold leading-6 text-slate-500">
-          {attorney.name} can accept representation after the retainer succeeds.
-        </p>
-        <div className="mt-5 rounded-[26px] bg-[#09111f] p-5 text-white">
-          <p className="text-xs font-black uppercase text-amber-200">Retainer</p>
-          <p className="mt-2 text-5xl font-black">{formatCurrency(retainerAmount)}</p>
-          <p className="mt-4 text-sm font-bold text-slate-200">Visa ending in 4242</p>
-        </div>
-        <button
-          className="mt-5 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#155dfc] text-lg font-black text-white disabled:opacity-50"
-          onClick={onPay}
-          disabled={busy}
-          data-testid="pay-retainer"
-        >
-          <CircleDollarSign className="h-5 w-5" />
-          Pay Retainer
+    <section className="lod-screen is-active">
+      <Topbar onBack={onBack} title="Pay Retainer" tag="Final step - retainer matters" />
+
+      <div className="lod-sign-summary">
+        <SummaryRow label="Retainer amount" value={formatCurrency(retainerAmount)} />
+        <SummaryRow label="Card on file" value="Visa ending 4242" />
+        <SummaryRow label="Charged only" value="after signature" />
+      </div>
+
+      <div className="lod-fee-note">
+        Your card will be charged the full retainer amount. This does not create representation until the attorney accepts.
+      </div>
+
+      <div className="lod-px lod-bottom-pad">
+        <button className="lod-btn-primary" onClick={onPay} disabled={busy} data-testid="pay-retainer">
+          <CircleDollarSign className="h-4 w-4" />
+          Pay Retainer - {formatCurrency(retainerAmount)}
         </button>
-      </section>
-    </AppScreen>
+      </div>
+    </section>
   );
 }
 
 function AcceptanceScreen({
   attorney,
-  category,
   caseRecord,
   agreement,
   payment,
@@ -920,85 +829,78 @@ function AcceptanceScreen({
   onAccept
 }: {
   attorney: Attorney;
-  category: LegalCategory;
   caseRecord: CaseRecord;
   agreement: Agreement;
   payment: Payment | null;
   busy: boolean;
   onAccept: () => void;
 }) {
+  const retainer = requiresRetainer(caseRecord.feeModel);
+
   return (
-    <AppScreen>
-      <ScreenHeader title="Waiting for attorney acceptance" subtitle={category.name} eyebrow="Final step" />
-      <section className="rounded-[30px] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <div className="flex items-center gap-4">
-          <AttorneyAvatar attorney={attorney} />
-          <div>
-            <h1 className="text-2xl font-black leading-7 text-[#09111f]">{attorney.name}</h1>
-            <p className="text-sm font-bold text-slate-500">{attorney.firmName}</p>
-          </div>
+    <section className="lod-screen is-active">
+      <div className="lod-wait-wrap">
+        <div className="lod-spinner" />
+        <h2>Waiting for attorney acceptance</h2>
+        <p>
+          Your signed agreement{retainer ? " and retainer payment" : ""} have been sent to {attorney.name}.
+        </p>
+
+        <div className="lod-wait-card">
+          <StatusRow label="Signature" value={agreement.signedByClient ? "Complete" : "Pending"} active={agreement.signedByClient} />
+          {retainer ? (
+            <StatusRow label="Retainer payment" value={payment?.status === "succeeded" ? "Paid" : "Pending"} active={payment?.status === "succeeded"} />
+          ) : (
+            <StatusRow label="Payment" value="No upfront retainer" active />
+          )}
+          <StatusRow label="Attorney acceptance" value="Pending" active={false} />
         </div>
-        <div className="mt-5 grid gap-3">
-          <StatusLine label="Client signed agreement" active={agreement.signedByClient} />
-          <StatusLine
-            label={requiresRetainer(caseRecord.feeModel) ? "Retainer processed" : "No upfront retainer required"}
-            active={payment?.status === "succeeded" || payment?.status === "not_required"}
-          />
-          <StatusLine label="Attorney acceptance pending" active={false} />
-        </div>
-        <button
-          className="mt-5 min-h-14 w-full rounded-2xl bg-[#09111f] text-lg font-black text-white disabled:opacity-50"
-          onClick={onAccept}
-          disabled={busy}
-          data-testid="accept-engagement"
-        >
+
+        <div className="lod-demo-tag">Demo control - simulates the attorney dashboard</div>
+        <button className="lod-btn-primary lod-btn-primary--amber" onClick={onAccept} disabled={busy} data-testid="accept-engagement">
           Attorney Accepts
+          <ChevronRight className="h-4 w-4" />
         </button>
-      </section>
-    </AppScreen>
+      </div>
+    </section>
   );
 }
 
 function ConfirmedScreen({
   attorney,
-  category,
+  caseRecord,
   casePacket,
+  payment,
   onPacket,
-  onIntegrations
+  onHome
 }: {
   attorney: Attorney;
-  category: LegalCategory;
+  caseRecord: CaseRecord;
   casePacket: CasePacket;
+  payment: Payment | null;
   onPacket: () => void;
-  onIntegrations: () => void;
+  onHome: () => void;
 }) {
-  return (
-    <AppScreen>
-      <section className="rounded-[32px] bg-[#09111f] p-6 text-white shadow-[0_24px_70px_rgba(9,17,31,0.24)]">
-        <div className="grid h-16 w-16 place-items-center rounded-full bg-emerald-400 text-[#09111f]">
-          <Check className="h-9 w-9" />
-        </div>
-        <p className="mt-5 text-xs font-black uppercase text-emerald-200">Case created</p>
-        <h1 className="mt-2 text-4xl font-black leading-[1.02]">Representation Started</h1>
-        <p className="mt-4 text-sm font-bold leading-6 text-slate-200">
-          {attorney.name} accepted the {category.name} matter. Your case packet is ready.
-        </p>
-      </section>
+  const retainer = requiresRetainer(caseRecord.feeModel);
 
-      <section className="rounded-[30px] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <StatusLine label={`Case reference: ${casePacket.reference}`} active />
-        <StatusLine label="Agreement fully executed" active />
-        <StatusLine label="Attorney acceptance complete" active />
-        <div className="mt-5 grid gap-3">
-          <button className="min-h-14 rounded-2xl bg-[#155dfc] text-lg font-black text-white" onClick={onPacket}>
-            View Case Packet
-          </button>
-          <button className="min-h-14 rounded-2xl border border-slate-200 bg-white text-lg font-black text-[#09111f]" onClick={onIntegrations}>
-            Export Case
-          </button>
+  return (
+    <section className="lod-screen is-active">
+      <div className="lod-confirm-wrap">
+        <div className="lod-confirm-badge">✓</div>
+        <h2>Representation Started</h2>
+        <p className="lod-sub">{attorney.name} has accepted your signed agreement. Full representation has begun.</p>
+
+        <div className="lod-confirm-details">
+          <DetailRow label="Case reference" value={casePacket.reference} />
+          <DetailRow label="Agreement" value="Fully executed" ok />
+          <DetailRow label={retainer ? "Retainer" : "Payment"} value={retainer ? `${formatCurrency(payment?.amount)} paid` : "No upfront retainer"} ok />
+          <DetailRow label="Attorney" value={attorney.name} />
         </div>
-      </section>
-    </AppScreen>
+
+        <button className="lod-btn-primary lod-mb-10" onClick={onPacket}>View Case Packet</button>
+        <button className="lod-btn-secondary" onClick={onHome}>Back to Home</button>
+      </div>
+    </section>
   );
 }
 
@@ -1011,6 +913,7 @@ function CasePacketScreen({
   casePacket,
   packetJsonHref,
   packetPdfHref,
+  onBack,
   onIntegrations,
   onHome
 }: {
@@ -1022,243 +925,107 @@ function CasePacketScreen({
   casePacket: CasePacket | null;
   packetJsonHref: string;
   packetPdfHref: string;
+  onBack: () => void;
   onIntegrations: () => void;
   onHome: () => void;
 }) {
   if (!casePacket || !caseRecord || !agreement || !attorney || !category) {
     return (
-      <EmptyState
-        title="No case packet yet"
-        body="Choose a legal issue, call an attorney, sign, and complete acceptance to create a packet."
-        action="Start New Matter"
-        onAction={onHome}
-      />
-    );
-  }
-
-  return (
-    <AppScreen>
-      <ScreenHeader title="Case Packet" subtitle={casePacket.reference} eyebrow="Export ready" />
-      <section className="space-y-3 rounded-[30px] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <PacketRow label="Client info" value={`${casePacket.client.name} - ${casePacket.client.phone}`} />
-        <PacketRow label="Matter type" value={category.name} />
-        <PacketRow label="Agreement status" value={agreement.fullyExecuted ? "Fully executed" : "Pending"} />
-        <PacketRow label="Payment status" value={paymentStatusLabel(payment, caseRecord)} />
-        <PacketRow label="Attorney acceptance status" value={caseRecord.attorneyAcceptanceStatus} />
-        <PacketRow label="Attorney" value={`${attorney.name}, ${attorney.firmName}`} />
-      </section>
-
-      <button
-        className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#09111f] text-lg font-black text-white"
-        onClick={onIntegrations}
-      >
-        <PlugZap className="h-5 w-5" />
-        Export to Integration Suite
-      </button>
-
-      <div className="grid grid-cols-2 gap-3">
-        <a
-          className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white text-sm font-black text-[#09111f] shadow-sm"
-          href={packetJsonHref}
-          target="_blank"
-          download={`${casePacket.reference}.json`}
-        >
-          <Download className="h-4 w-4" />
-          JSON
-        </a>
-        <a
-          className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white text-sm font-black text-[#09111f] shadow-sm"
-          href={packetPdfHref}
-          target="_blank"
-          download={`${casePacket.reference}.${isStaticDemo ? "txt" : "pdf"}`}
-        >
-          <Download className="h-4 w-4" />
-          PDF
-        </a>
-      </div>
-    </AppScreen>
-  );
-}
-
-function IntegrationSuiteScreen({ casePacket, onBack }: { casePacket: CasePacket | null; onBack: () => void }) {
-  const integrations = [
-    "Clio",
-    "MyCase",
-    "PracticePanther",
-    "Filevine",
-    "Lawmatics",
-    "Smokeball",
-    "CASEpeer",
-    "Zapier",
-    "Make",
-    "PDF Export",
-    "Email Export"
-  ];
-
-  return (
-    <AppScreen>
-      <ScreenHeader title="Integration Suite" subtitle={casePacket?.reference ?? "Export destinations"} eyebrow="Case export" onBack={onBack} />
-      <div className="grid gap-3">
-        {integrations.map((item) => (
-          <article className="flex min-h-20 items-center gap-4 rounded-[24px] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]" key={item}>
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#e9f1ff] text-[#155dfc]">
-              {item.includes("Export") ? <FileText className="h-6 w-6" /> : <PlugZap className="h-6 w-6" />}
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-black text-[#09111f]">{item}</h2>
-              <p className="text-xs font-bold text-slate-500">
-                {casePacket ? "Ready to receive this case packet" : "Connector placeholder"}
-              </p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </article>
-        ))}
-      </div>
-    </AppScreen>
-  );
-}
-
-function CallsScreen({
-  attorney,
-  category,
-  videoCall,
-  onHome,
-  onReturn
-}: {
-  attorney: Attorney | null;
-  category: LegalCategory | null;
-  videoCall: VideoCall | null;
-  onHome: () => void;
-  onReturn: () => void;
-}) {
-  if (!attorney || !category || !videoCall) {
-    return (
-      <EmptyState
-        title="No active calls"
-        body="Choose an urgent legal issue and tap an attorney photo to start a call."
-        action="Choose Issue"
-        onAction={onHome}
-      />
-    );
-  }
-
-  return (
-    <AppScreen>
-      <ScreenHeader title="Calls" subtitle="Recent call room" eyebrow="Video" />
-      <section className="rounded-[30px] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <div className="flex items-center gap-4">
-          <AttorneyAvatar attorney={attorney} />
-          <div>
-            <h1 className="text-2xl font-black text-[#09111f]">{attorney.name}</h1>
-            <p className="text-sm font-bold text-slate-500">{category.name}</p>
-          </div>
+      <section className="lod-screen is-active">
+        <div className="lod-confirm-wrap">
+          <div className="lod-confirm-badge">i</div>
+          <h2>No case packet yet</h2>
+          <p className="lod-sub">Choose a legal issue, call an attorney, sign, and complete acceptance to create a packet.</p>
+          <button className="lod-btn-primary" onClick={onHome}>Start New Matter</button>
         </div>
-        <button className="mt-5 min-h-14 w-full rounded-2xl bg-[#09111f] text-lg font-black text-white" onClick={onReturn}>
-          Return to Call
-        </button>
       </section>
-    </AppScreen>
+    );
+  }
+
+  return (
+    <section className="lod-screen is-active">
+      <Topbar onBack={onBack} title="Case Packet" tag={`Case ${casePacket.reference}`} />
+
+      <PacketSection title="Client">
+        <DetailRow label="Name" value={casePacket.client.name} />
+        <DetailRow label="Contact" value={casePacket.client.email} />
+      </PacketSection>
+
+      <PacketSection title="Attorney">
+        <DetailRow label="Name" value={attorney.name} />
+        <DetailRow label="Firm" value={attorney.firmName} />
+      </PacketSection>
+
+      <PacketSection title="Matter">
+        <DetailRow label="Type" value={category.name} />
+        <DetailRow label="Agreement status" value={agreement.fullyExecuted ? "Fully executed" : "Pending"} ok={agreement.fullyExecuted} />
+        <DetailRow label="Payment status" value={paymentStatusLabel(payment, caseRecord)} ok />
+        <DetailRow label="Attorney acceptance" value={caseRecord.attorneyAcceptanceStatus} ok />
+      </PacketSection>
+
+      <PacketSection title="Exports">
+        <div className="lod-export-links">
+          <a href={packetJsonHref} target="_blank" download={`${casePacket.reference}.json`}>
+            <Download className="h-4 w-4" />
+            JSON
+          </a>
+          <a href={packetPdfHref} target="_blank" download={`${casePacket.reference}.${isStaticDemo ? "txt" : "pdf"}`}>
+            <Download className="h-4 w-4" />
+            PDF
+          </a>
+        </div>
+      </PacketSection>
+
+      <div className="lod-px lod-bottom-pad">
+        <button className="lod-btn-primary" onClick={onIntegrations}>Export to Integration Suite</button>
+      </div>
+    </section>
   );
 }
 
-function CasesScreen({
+function IntegrationSuiteScreen({
   casePacket,
-  onPacket,
-  onHome
+  selectedIntegration,
+  exported,
+  onBack,
+  onSelect,
+  onExport
 }: {
   casePacket: CasePacket | null;
-  onPacket: () => void;
-  onHome: () => void;
-}) {
-  if (!casePacket) {
-    return (
-      <EmptyState
-        title="No cases yet"
-        body="Your retained matters appear here after attorney acceptance."
-        action="Start New Matter"
-        onAction={onHome}
-      />
-    );
-  }
-
-  return (
-    <AppScreen>
-      <ScreenHeader title="Cases" subtitle="Active representation" eyebrow="1 open case" />
-      <article className="rounded-[30px] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <p className="text-xs font-black uppercase text-[#155dfc]">{casePacket.reference}</p>
-        <h1 className="mt-2 text-2xl font-black text-[#09111f]">{casePacket.matter.category}</h1>
-        <p className="mt-2 text-sm font-bold text-slate-500">{casePacket.attorney.name}</p>
-        <button className="mt-5 min-h-14 w-full rounded-2xl bg-[#09111f] text-lg font-black text-white" onClick={onPacket}>
-          Open Case Packet
-        </button>
-      </article>
-    </AppScreen>
-  );
-}
-
-function ProfileScreen({
-  onIntegrations,
-  onAttorneyDashboard,
-  onAdminDashboard
-}: {
-  onIntegrations: () => void;
-  onAttorneyDashboard: () => void;
-  onAdminDashboard: () => void;
-}) {
-  return (
-    <AppScreen>
-      <ScreenHeader title="Profile" subtitle={demoClient.email} eyebrow="Client account" />
-      <section className="rounded-[30px] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <div className="flex items-center gap-4">
-          <span className="grid h-16 w-16 place-items-center rounded-full bg-[#09111f] text-xl font-black text-white">
-            {attorneyInitials(demoClient.name)}
-          </span>
-          <div>
-            <h1 className="text-2xl font-black text-[#09111f]">{demoClient.name}</h1>
-            <p className="text-sm font-bold text-slate-500">{demoClient.phone}</p>
-          </div>
-        </div>
-        <div className="mt-5 grid gap-3">
-          <ProfileAction label="Integration Suite" icon={<PlugZap className="h-5 w-5" />} onClick={onIntegrations} />
-          <ProfileAction label="Attorney Dashboard" icon={<UserRoundCheck className="h-5 w-5" />} onClick={onAttorneyDashboard} />
-          <ProfileAction label="Admin Dashboard" icon={<BriefcaseBusiness className="h-5 w-5" />} onClick={onAdminDashboard} />
-        </div>
-      </section>
-    </AppScreen>
-  );
-}
-
-function DashboardPlaceholder({
-  title,
-  eyebrow,
-  body,
-  metrics,
-  href,
-  onBack
-}: {
-  title: string;
-  eyebrow: string;
-  body: string;
-  metrics: Array<[string, string]>;
-  href: string;
+  selectedIntegration: string;
+  exported: boolean;
   onBack: () => void;
+  onSelect: (integration: string) => void;
+  onExport: () => void;
 }) {
   return (
-    <AppScreen>
-      <ScreenHeader title={title} subtitle={body} eyebrow={eyebrow} onBack={onBack} />
-      <section className="grid gap-3">
-        {metrics.map(([value, label]) => (
-          <article className="rounded-[24px] bg-white p-4 shadow-sm" key={label}>
-            <p className="text-3xl font-black text-[#09111f]">{value}</p>
-            <p className="mt-1 text-sm font-black uppercase text-slate-500">{label}</p>
-          </article>
+    <section className="lod-screen is-active">
+      <Topbar onBack={onBack} title="Integration Suite" tag="Send case to your software" />
+      <p className="lod-integration-copy">Attorney-owned export destination. Lawyer On Demand brings the client; the attorney's existing software handles the case.</p>
+
+      <div className="lod-integration-grid">
+        {integrationOptions.map(([abbr, name]) => (
+          <button
+            className={cn("lod-integration-card", selectedIntegration === name && "is-selected")}
+            key={name}
+            onClick={() => onSelect(name)}
+          >
+            <span className="lod-integration-ic">{abbr}</span>
+            <span className="lod-integration-name">{name}</span>
+          </button>
         ))}
-      </section>
-      <a className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#09111f] text-lg font-black text-white" href={href}>
-        Open Full Page
-        <ChevronRight className="h-5 w-5" />
-      </a>
-    </AppScreen>
+      </div>
+
+      {exported && (
+        <div className="lod-export-success">Case packet exported to {selectedIntegration}. PDF and JSON backups saved.</div>
+      )}
+
+      <div className="lod-px lod-bottom-pad">
+        <button className="lod-btn-primary" onClick={onExport}>
+          Send to Case Software
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -1274,201 +1041,414 @@ function FullBioSheet({
   onCall: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-[#09111f]/70 md:absolute">
-      <section className="max-h-[88vh] w-full overflow-auto rounded-t-[32px] bg-white p-5 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-black text-[#09111f]">Full Bio</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close bio">
-            <X className="h-5 w-5" />
-          </Button>
+    <div className="lod-sheet-backdrop">
+      <section className="lod-bio-sheet">
+        <div className="lod-sheet-head">
+          <h2>Full Bio</h2>
+          <button onClick={onClose} aria-label="Close bio"><X className="h-5 w-5" /></button>
         </div>
-        <div className="mt-4 flex items-center gap-4">
-          <button className="relative shrink-0" onClick={onCall} aria-label={`Start video call with ${attorney.name}`}>
-            <AttorneyAvatar attorney={attorney} size="lg" />
-            <span className="absolute bottom-0 right-0 h-5 w-5 rounded-full border-[3px] border-white bg-emerald-400" />
+        <div className="lod-attorney-row">
+          <button className="lod-photo-wrap" onClick={onCall} aria-label={`Start video call with ${attorney.name}`}>
+            <PhotoRing attorney={attorney} />
+            <span className="lod-photo-badge">●</span>
           </button>
-          <div>
-            <h3 className="text-2xl font-black text-[#09111f]">{attorney.name}</h3>
-            <p className="text-sm font-bold text-slate-500">{attorney.firmName}</p>
+          <div className="lod-attorney-info">
+            <div className="lod-attorney-name">{attorney.name}</div>
+            <div className="lod-attorney-firm">{attorney.firmName}</div>
+            <div className="lod-tags">
+              <span className="lod-tag">{category.name}</span>
+              <span className={cn("lod-tag", isNoUpfront(category) ? "lod-tag--green" : "lod-tag--fee")}>{feeTag(attorney, category)}</span>
+            </div>
           </div>
         </div>
-        <p className="mt-5 text-sm font-bold leading-7 text-slate-600">{attorney.fullBio}</p>
-        <div className="mt-5 grid gap-3">
-          <PacketRow label="Specialty" value={category.name} />
-          <PacketRow label="Fee type" value={feeTypeLabel(attorney, category)} />
-          <PacketRow label="Fee detail" value={feeDetail(attorney, category)} />
-          <PacketRow label="Jurisdictions" value={attorney.jurisdictions.join(", ")} />
-          <PacketRow label="Experience" value={`${attorney.yearsExperience} years`} />
-        </div>
-        <button className="mt-5 min-h-14 w-full rounded-2xl bg-[#09111f] text-lg font-black text-white" onClick={onCall}>
-          Tap photo to call
-        </button>
+        <p className="lod-card-summary">{attorney.fullBio}</p>
+        <button className="lod-btn-primary" onClick={onCall}>Tap photo to call</button>
       </section>
     </div>
   );
 }
 
-function BottomNav({
+function AttorneyDashboard({
   step,
-  onHome,
-  onCalls,
-  onCases,
-  onProfile
+  attorney,
+  category,
+  caseRecord,
+  agreement,
+  payment,
+  casePacket,
+  onStep
 }: {
-  step: Step;
-  onHome: () => void;
-  onCalls: () => void;
-  onCases: () => void;
-  onProfile: () => void;
+  step: AttorneyDashStep;
+  attorney: Attorney;
+  category: LegalCategory;
+  caseRecord: CaseRecord | null;
+  agreement: Agreement | null;
+  payment: Payment | null;
+  casePacket: CasePacket | null;
+  onStep: (step: AttorneyDashStep) => void;
 }) {
-  const items = [
-    { label: "Home", icon: <Home className="h-5 w-5" />, active: step === "home" || step === "attorneys", onClick: onHome },
-    { label: "Calls", icon: <PhoneCall className="h-5 w-5" />, active: step === "calls", onClick: onCalls },
-    {
-      label: "Cases",
-      icon: <FileText className="h-5 w-5" />,
-      active: step === "cases" || step === "packet" || step === "confirmed",
-      onClick: onCases
-    },
-    {
-      label: "Profile",
-      icon: <UserRound className="h-5 w-5" />,
-      active: step === "profile" || step === "integrations" || step === "attorney-dashboard" || step === "admin-dashboard",
-      onClick: onProfile
-    }
-  ];
-
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[430px] border-t border-slate-200 bg-white/95 px-4 pb-4 pt-2 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur md:absolute md:rounded-b-[24px]">
-      <div className="grid grid-cols-4 gap-1">
-        {items.map((item) => (
-          <button
-            className={cn(
-              "flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-black transition",
-              item.active ? "bg-[#09111f] text-white" : "text-slate-500"
-            )}
-            key={item.label}
-            onClick={item.onClick}
-          >
-            {item.icon}
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </nav>
+    <DashboardFrame
+      title="Attorney Portal"
+      url="app.lawyerondemand.com/attorney"
+      sidebar={[
+        ["availability", "Availability"],
+        ["video", "Video Room"],
+        ["agreement", "Agreement Review"],
+        ["case", "Case Management"],
+        ["integrations", "Integration Suite"]
+      ]}
+      active={step}
+      onStep={(value) => onStep(value as AttorneyDashStep)}
+    >
+      {step === "availability" && (
+        <>
+          <DashHeader title="Availability" sub="Only online attorneys appear in instant client results." right={<StatusPill live>Online</StatusPill>} />
+          <PanelCard title="Your status" desc="Toggle this any time. It controls whether clients can reach you right now.">
+            <div className="lod-avail-toggle">
+              <button className="is-selected">Available</button>
+              <button>Busy</button>
+              <button>Offline</button>
+            </div>
+          </PanelCard>
+          <PanelCard title="Incoming calls" desc="Clients who tapped your photo appear here in real time.">
+            <div className="lod-incoming-row">
+              <div>
+                <div className="lod-row-name">{demoClient.name}</div>
+                <div className="lod-row-meta">{category.name} - requesting now</div>
+              </div>
+              <button className="lod-mini-btn" onClick={() => onStep("video")}>Accept</button>
+            </div>
+          </PanelCard>
+        </>
+      )}
+
+      {step === "video" && (
+        <>
+          <DashHeader title="Video Room" sub={`${casePacket?.reference ?? "LOD-DEMO"} - Preliminary Guidance`} right={<StatusPill>Timer 02:47</StatusPill>} />
+          <PanelCard dark>
+            <div className="lod-dash-video-row">
+              <div className="lod-client-video">Client video</div>
+              <div>
+                <div className="lod-dash-video-name">{demoClient.name}</div>
+                <div className="lod-dash-video-meta">{category.name} - Preliminary guidance only</div>
+                <div className="lod-dash-video-note">Hire Me Now: {caseRecord ? "triggered" : "not yet triggered"}</div>
+              </div>
+            </div>
+          </PanelCard>
+          <PanelCard title="Private notes" desc="Not visible to the client. Carries into the case packet if hired.">
+            <textarea className="lod-notes-area" defaultValue="Advised client to preserve records and avoid missing deadlines. Client indicated intent to hire." />
+          </PanelCard>
+          <button className="lod-mini-btn" onClick={() => onStep("agreement")}>Client Tapped Hire Me Now</button>
+        </>
+      )}
+
+      {step === "agreement" && (
+        <>
+          <DashHeader title="Agreement Review" sub="Confirm terms before accepting the engagement." />
+          <PanelCard title={demoClient.name} desc={`${category.name} - ${caseRecord ? agreementTitle(caseRecord) : categoryKind(category)}`}>
+            <DashTable
+              rows={[
+                ["Agreement", agreement?.signedByClient ? "Signed electronically" : "Awaiting signature"],
+                ["Payment", paymentStatusLabel(payment, caseRecord)],
+                ["Matter", category.name]
+              ]}
+            />
+            <label className="lod-checkbox-row">
+              <input type="checkbox" defaultChecked />
+              <span>I accept this signed agreement and agree to represent this client.</span>
+            </label>
+            <button className="lod-mini-btn lod-mini-btn--amber" onClick={() => onStep("case")}>Accept Engagement</button>
+          </PanelCard>
+        </>
+      )}
+
+      {step === "case" && (
+        <>
+          <DashHeader title="Case Management" sub={`${casePacket?.reference ?? "LOD-DEMO"} - Representation active`} right={<StatusPill green>Active</StatusPill>} />
+          <PanelCard>
+            <DashTable
+              rows={[
+                ["Client", demoClient.name],
+                ["Matter", category.name],
+                ["Agreement", agreement?.fullyExecuted ? "Executed" : "Pending"],
+                ["Payment", paymentStatusLabel(payment, caseRecord)],
+                ["Recording", "Placeholder link"],
+                ["Documents", "None uploaded"]
+              ]}
+            />
+            <button className="lod-mini-btn lod-mini-btn--outline" onClick={() => onStep("integrations")}>Export to Integration Suite</button>
+          </PanelCard>
+        </>
+      )}
+
+      {step === "integrations" && (
+        <>
+          <DashHeader title="Integration Suite" sub="Choose where new cases get sent automatically." />
+          <div className="lod-int-grid-desktop">
+            {integrationOptions.map(([abbr, name], index) => (
+              <div className={cn("lod-int-card-d", index === 0 && "is-selected")} key={name}>
+                <div className="lod-int-card-ic">{abbr}</div>
+                <div className="lod-int-card-name">{name}</div>
+              </div>
+            ))}
+          </div>
+          <PanelCard title={casePacket?.reference ?? "Case packet"} desc="Sent to Clio. PDF and JSON backups generated automatically.">
+            <StatusPill green>Export successful</StatusPill>
+          </PanelCard>
+        </>
+      )}
+    </DashboardFrame>
   );
 }
 
-function AppScreen({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={cn("flex flex-col gap-4 p-4", className)}>{children}</section>;
+function AdminDashboard({ step, onStep }: { step: AdminDashStep; onStep: (step: AdminDashStep) => void }) {
+  return (
+    <DashboardFrame
+      title="Admin Console"
+      url="app.lawyerondemand.com/admin"
+      sidebar={[
+        ["overview", "Overview"],
+        ["attorneys", "Attorneys"],
+        ["cases", "Cases"]
+      ]}
+      active={step}
+      onStep={(value) => onStep(value as AdminDashStep)}
+    >
+      {step === "overview" && (
+        <>
+          <DashHeader title="Overview" sub="Live platform activity" />
+          <div className="lod-stat-grid">
+            <StatCard value="1,204" label="Total users" />
+            <StatCard value="86" label="Total attorneys" />
+            <StatCard value="34" label="Online now" />
+            <StatCard value="512" label="Total calls" />
+            <StatCard value="318" label="Signed agreements" />
+            <StatCard value="296" label="Retained cases" />
+            <StatCard value="$412K" label="Retainer payments" />
+            <StatCard value="7" label="Pending approvals" />
+          </div>
+          <PanelCard title="Pending attorney approvals">
+            <div className="lod-incoming-row">
+              <div>
+                <div className="lod-row-name">Amara Osei</div>
+                <div className="lod-row-meta">Family Law - Bar #NSW-88213</div>
+              </div>
+              <button className="lod-mini-btn" onClick={() => onStep("attorneys")}>Review</button>
+            </div>
+          </PanelCard>
+        </>
+      )}
+
+      {step === "attorneys" && (
+        <>
+          <DashHeader title="Manage Attorneys" sub="Approve, suspend, or verify license status" />
+          <DataTable
+            headers={["Name", "Firm", "Category", "Status"]}
+            rows={[
+              ["Sarah Mitchell", "Mitchell Defence Group", "DUI / DWI", "Approved"],
+              ["Elena Rodriguez", "Rodriguez Injury Law", "Auto Accident", "Approved"],
+              ["Michael Grant", "Grant Criminal Defence", "Criminal Defence", "Approved"],
+              ["Amara Osei", "Osei Family Law", "Family Law", "Pending"]
+            ]}
+          />
+        </>
+      )}
+
+      {step === "cases" && (
+        <>
+          <DashHeader title="Manage Cases" sub="Full pipeline status per case" />
+          <DataTable
+            headers={["Case", "Client", "Attorney", "Matter", "Payment", "Status"]}
+            rows={[
+              ["LOD-88213", "A. Johnson", "S. Mitchell", "DUI / DWI", "Paid", "Active"],
+              ["LOD-88214", "R. Nguyen", "E. Rodriguez", "Auto Accident", "No upfront retainer", "Active"],
+              ["LOD-88215", "T. Brooks", "M. Grant", "Criminal Defence", "Pending", "Awaiting acceptance"]
+            ]}
+          />
+        </>
+      )}
+    </DashboardFrame>
+  );
 }
 
-function ScreenHeader({
+function DashboardFrame({
   title,
-  subtitle,
-  eyebrow,
-  onBack
+  url,
+  sidebar,
+  active,
+  onStep,
+  children
 }: {
   title: string;
-  subtitle?: string;
-  eyebrow?: string;
-  onBack?: () => void;
+  url: string;
+  sidebar: Array<[string, string]>;
+  active: string;
+  onStep: (step: string) => void;
+  children: ReactNode;
 }) {
   return (
-    <header className="flex items-start gap-3 pt-1">
-      {onBack && (
-        <button className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-[#09111f] shadow-sm" onClick={onBack}>
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-      )}
-      <div className="min-w-0 flex-1">
-        {eyebrow && <p className="text-xs font-black uppercase text-[#155dfc]">{eyebrow}</p>}
-        <h1 className="text-3xl font-black leading-[1.02] text-[#09111f]">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm font-bold leading-6 text-slate-500">{subtitle}</p>}
+    <div className="lod-desktop">
+      <div className="lod-browser-bar">
+        <div className="lod-browser-dot lod-red" />
+        <div className="lod-browser-dot lod-yellow" />
+        <div className="lod-browser-dot lod-green" />
+        <div className="lod-browser-url">{url}</div>
       </div>
-    </header>
+      <div className="lod-dash-layout">
+        <aside className="lod-sidebar">
+          <div className="lod-sidebar-brand">
+            <div className="lod-brand-glyph">L</div>
+            <span>{title}</span>
+          </div>
+          {sidebar.map(([id, label]) => (
+            <button className={cn("lod-sidebar-item", active === id && "is-on")} key={id} onClick={() => onStep(id)}>
+              {label}
+            </button>
+          ))}
+          <div className="lod-sidebar-divider" />
+          <div className="lod-sidebar-foot">Lawyer On Demand</div>
+        </aside>
+        <section className="lod-dash-main">{children}</section>
+      </div>
+    </div>
   );
 }
 
-function AttorneyAvatar({ attorney, size = "md" }: { attorney: Attorney; size?: "md" | "lg" }) {
+function Topbar({ title, tag, onBack }: { title: string; tag: string; onBack?: () => void }) {
   return (
-    <span
-      className={cn(
-        "grid place-items-center rounded-full bg-[linear-gradient(135deg,#155dfc,#02c7ee,#11a36a)] font-black text-white shadow-lg",
-        size === "lg" ? "h-24 w-24 text-3xl" : "h-16 w-16 text-xl"
+    <div className="lod-topbar">
+      {onBack && (
+        <button className="lod-back-circle" onClick={onBack} aria-label="Back">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
       )}
-    >
-      {attorneyInitials(attorney.name)}
+      <div>
+        <h2>{title}</h2>
+        <div className="lod-step-tag">{tag}</div>
+      </div>
+    </div>
+  );
+}
+
+function PhotoRing({ attorney }: { attorney: Attorney }) {
+  return (
+    <span className="lod-photo-ring">
+      <span className="lod-photo-inner">{attorneyInitials(attorney.name)}</span>
     </span>
   );
 }
 
-function AppFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-slate-50 px-3 py-2">
-      <p className="text-[10px] font-black uppercase text-slate-400">{label}</p>
-      <p className="mt-0.5 text-sm font-black leading-5 text-[#09111f]">{value}</p>
-    </div>
-  );
-}
-
-function StatusLine({ label, active }: { label: string; active: boolean }) {
-  return (
-    <div className="flex min-h-12 items-center gap-3 rounded-2xl bg-slate-50 px-3">
-      <span className={cn("grid h-8 w-8 place-items-center rounded-full", active ? "bg-emerald-500 text-white" : "bg-white text-slate-400")}>
-        {active ? <Check className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}
-      </span>
-      <span className="text-sm font-black text-[#09111f]">{label}</span>
-    </div>
-  );
-}
-
-function PacketRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-slate-50 p-3">
-      <p className="text-[10px] font-black uppercase text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-black leading-5 text-[#09111f]">{value}</p>
-    </div>
-  );
-}
-
-function ProfileAction({ label, icon, onClick }: { label: string; icon: ReactNode; onClick: () => void }) {
-  return (
-    <button className="flex min-h-14 items-center justify-between rounded-2xl bg-slate-50 px-4 text-left text-[#09111f]" onClick={onClick}>
-      <span className="flex items-center gap-3 text-sm font-black">
-        {icon}
-        {label}
-      </span>
-      <ChevronRight className="h-5 w-5 text-slate-400" />
-    </button>
-  );
-}
-
-function EmptyState({
-  title,
-  body,
-  action,
-  onAction
+function StatusPill({
+  children,
+  live,
+  green
 }: {
-  title: string;
-  body: string;
-  action: string;
-  onAction: () => void;
+  children: ReactNode;
+  live?: boolean;
+  green?: boolean;
 }) {
   return (
-    <AppScreen>
-      <section className="grid min-h-[560px] place-items-center rounded-[32px] bg-white p-6 text-center shadow-[0_18px_45px_rgba(15,23,42,0.09)]">
-        <div>
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#e9f1ff] text-[#155dfc]">
-            <FileText className="h-8 w-8" />
-          </div>
-          <h1 className="mt-5 text-3xl font-black text-[#09111f]">{title}</h1>
-          <p className="mt-3 text-sm font-bold leading-6 text-slate-500">{body}</p>
-          <button className="mt-6 min-h-14 w-full rounded-2xl bg-[#09111f] px-6 text-lg font-black text-white" onClick={onAction}>
-            {action}
-          </button>
-        </div>
-      </section>
-    </AppScreen>
+    <span className={cn("lod-status-pill", green && "lod-status-pill--green")}>
+      {live && <span className="lod-live-dot" />}
+      {children}
+    </span>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="lod-summary-row">
+      <span className="lod-summary-key">{label}</span>
+      <span className="lod-summary-value">{value}</span>
+    </div>
+  );
+}
+
+function StatusRow({ label, value, active }: { label: string; value: string; active: boolean }) {
+  return (
+    <div className="lod-wait-row">
+      <span className="lod-wait-key">{label}</span>
+      <span className={cn("lod-wait-value", active && "is-active")}>{active ? "✓ " : ""}{value}</span>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, ok }: { label: string; value: string; ok?: boolean }) {
+  return (
+    <div className="lod-detail-row">
+      <span className="lod-detail-key">{label}</span>
+      <span className={cn("lod-detail-value", ok && "is-ok")}>{value}</span>
+    </div>
+  );
+}
+
+function PacketSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="lod-packet-section">
+      <div className="lod-packet-heading">{title}</div>
+      {children}
+    </section>
+  );
+}
+
+function DashHeader({ title, sub, right }: { title: string; sub: string; right?: ReactNode }) {
+  return (
+    <div className="lod-dash-header">
+      <div>
+        <h2>{title}</h2>
+        <div className="lod-dash-sub">{sub}</div>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function PanelCard({ title, desc, dark, children }: { title?: string; desc?: string; dark?: boolean; children: ReactNode }) {
+  return (
+    <section className={cn("lod-panel-card", dark && "lod-panel-card--dark")}>
+      {title && <h3>{title}</h3>}
+      {desc && <p className="lod-panel-desc">{desc}</p>}
+      {children}
+    </section>
+  );
+}
+
+function StatCard({ value, label }: { value: string; label: string }) {
+  return (
+    <article className="lod-stat-card">
+      <div className="lod-stat-value">{value}</div>
+      <div className="lod-stat-label">{label}</div>
+    </article>
+  );
+}
+
+function DashTable({ rows }: { rows: Array<[string, string]> }) {
+  return (
+    <table className="lod-dash-table">
+      <tbody>
+        {rows.map(([label, value]) => (
+          <tr key={label}>
+            <td>{label}</td>
+            <td>{value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  return (
+    <table className="lod-data-table">
+      <thead>
+        <tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.join("-")}>{row.map((cell, index) => <td key={`${cell}-${index}`}>{cell}</td>)}</tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
