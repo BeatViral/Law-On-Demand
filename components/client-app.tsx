@@ -39,7 +39,7 @@ type AcceptanceResponse = {
   packet: CasePacket;
 };
 
-const urgentCategoryIds = ["cat_dui", "cat_stop", "cat_infraction", "cat_auto", "cat_injury", "cat_criminal"];
+const urgentCategoryIds = ["cat_dui", "cat_stop", "cat_auto", "cat_injury", "cat_criminal"];
 
 const appCategories = urgentCategoryIds
   .map((id) => legalCategories.find((category) => category.id === id))
@@ -83,7 +83,7 @@ function attorneyInitials(name: string) {
 
 function issueGlyph(category: LegalCategory) {
   if (category.id === "cat_dui") return "DUI";
-  if (category.id === "cat_stop") return "TS";
+  if (category.id === "cat_stop") return "TR";
   if (category.id === "cat_infraction") return "TI";
   if (category.id === "cat_auto") return "AA";
   if (category.id === "cat_injury") return "PI";

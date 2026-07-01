@@ -12,11 +12,11 @@ export const legalCategories: LegalCategory[] = [
   },
   {
     id: "cat_stop",
-    name: "Traffic Stop",
+    name: "Traffic Stop / Infraction",
     slug: "traffic-stop",
     defaultFeeModel: "retainer",
     active: true,
-    urgency: "Stopped now, questioning, citation risk",
+    urgency: "Stopped now, citations, points, court date",
     accent: "cobalt"
   },
   {

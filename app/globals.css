@@ -277,6 +277,10 @@ img {
   border-left: 3px solid var(--green);
 }
 
+.lod-issue-tile:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .lod-issue-icon {
   display: inline-flex;
   width: 32px;
@@ -1645,6 +1649,10 @@ img {
 
 .lod-issue-tile--contingency {
   border-left-width: 5px;
+}
+
+.lod-issue-tile:last-child:nth-child(odd) {
+  min-height: 112px;
 }
 
 .lod-issue-icon {
