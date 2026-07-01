@@ -1919,6 +1919,202 @@ img {
   background: #fff9ef;
 }
 
+.lod-portal-entry {
+  margin: 18px 24px 26px;
+  padding: 14px;
+  border: 1px solid rgba(11, 28, 61, 0.07);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 14px 34px -30px rgba(11, 28, 61, 0.82);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.lod-portal-kicker {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6f7a8b;
+}
+
+.lod-portal-entry p {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4e5969;
+}
+
+.lod-portal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.lod-portal-actions button {
+  min-height: 48px;
+  border: 1px solid rgba(11, 28, 61, 0.08);
+  border-radius: 14px;
+  background: #fff;
+  color: #07142d;
+  font-size: 12.5px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lod-portal-actions span {
+  width: 25px;
+  height: 25px;
+  border-radius: 8px;
+  background: #eef1f6;
+  color: #16294f;
+  display: grid;
+  place-items: center;
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.lod-portal-screen {
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+}
+
+.lod-portal-shell {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.lod-portal-shell .lod-desktop {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.lod-portal-shell .lod-browser-bar {
+  display: none;
+}
+
+.lod-portal-shell .lod-dash-layout {
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.lod-portal-shell .lod-sidebar {
+  width: 100%;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 16px;
+  background: #07142d;
+}
+
+.lod-portal-shell .lod-sidebar::-webkit-scrollbar,
+.lod-portal-shell .lod-dash-main::-webkit-scrollbar {
+  display: none;
+}
+
+.lod-portal-shell .lod-sidebar-brand,
+.lod-portal-shell .lod-sidebar-divider,
+.lod-portal-shell .lod-sidebar-foot {
+  display: none;
+}
+
+.lod-portal-shell .lod-sidebar-item {
+  width: auto;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  padding: 9px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+}
+
+.lod-portal-shell .lod-sidebar-item.is-on {
+  background: #fff;
+  color: #07142d;
+}
+
+.lod-portal-shell .lod-dash-main {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  padding: 18px 20px 28px;
+  overflow-y: auto;
+}
+
+.lod-portal-shell .lod-dash-header {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.lod-portal-shell .lod-dash-header h2 {
+  font-size: 24px;
+}
+
+.lod-portal-shell .lod-dash-sub {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.lod-portal-shell .lod-panel-card {
+  padding: 15px;
+  margin-bottom: 14px;
+}
+
+.lod-portal-shell .lod-stat-grid,
+.lod-portal-shell .lod-int-grid-desktop {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.lod-portal-shell .lod-stat-card {
+  padding: 12px;
+}
+
+.lod-portal-shell .lod-stat-value {
+  font-size: 25px;
+}
+
+.lod-portal-shell .lod-incoming-row,
+.lod-portal-shell .lod-dash-header {
+  align-items: stretch;
+}
+
+.lod-portal-shell .lod-dash-video-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.lod-portal-shell .lod-client-video {
+  width: 100%;
+  height: 160px;
+}
+
+.lod-portal-shell .lod-data-table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.lod-portal-shell .lod-data-table tbody,
+.lod-portal-shell .lod-data-table thead {
+  display: table;
+  width: 100%;
+}
+
 .lod-integration-ic,
 .lod-int-card-ic {
   font-weight: 900;

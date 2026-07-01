@@ -29,6 +29,7 @@ import type { Agreement, Attorney, CasePacket, CaseRecord, LegalCategory, Paymen
 import { cn, formatCurrency } from "@/lib/utils";
 
 type ClientStep = "home" | "attorneys" | "call" | "agreement" | "payment" | "acceptance" | "confirmed" | "packet" | "integrations";
+type AppView = "client" | "attorney" | "admin";
 type AttorneyDashStep = "availability" | "video" | "agreement" | "case" | "integrations";
 type AdminDashStep = "overview" | "attorneys" | "cases";
 
@@ -158,8 +159,11 @@ async function postJson<T>(path: string, body: unknown, fallback: () => T): Prom
   }
 }
 
-export function ClientApp() {
+export function ClientApp({ initialView = "client" }: { initialView?: AppView }) {
+  const [view, setView] = useState<AppView>(initialView);
   const [step, setStep] = useState<ClientStep>("home");
+  const [attorneyDashStep, setAttorneyDashStep] = useState<AttorneyDashStep>("availability");
+  const [adminDashStep, setAdminDashStep] = useState<AdminDashStep>("overview");
   const [selectedCategory, setSelectedCategory] = useState<LegalCategory | null>(null);
   const [selectedAttorney, setSelectedAttorney] = useState<Attorney | null>(null);
   const [bioAttorney, setBioAttorney] = useState<Attorney | null>(null);
@@ -182,6 +186,8 @@ export function ClientApp() {
 
   const selectedPracticeArea =
     selectedAttorney && selectedCategory ? getPracticeArea(selectedAttorney, selectedCategory.id) : null;
+  const portalCategory = selectedCategory ?? appCategories[0];
+  const portalAttorney = selectedAttorney ?? getAvailableAttorneys(portalCategory.id)[0];
 
   const packetJsonHref = useMemo(() => {
     if (!casePacket || !caseRecord) return "#";
@@ -214,7 +220,19 @@ export function ClientApp() {
   }, [step]);
 
   function openClientStep(nextStep: ClientStep) {
+    setView("client");
     setStep(nextStep);
+    resetScroll();
+  }
+
+  function openPortal(nextView: "attorney" | "admin") {
+    setView(nextView);
+    resetScroll();
+  }
+
+  function returnHome() {
+    setView("client");
+    setStep("home");
     resetScroll();
   }
 
@@ -362,9 +380,36 @@ export function ClientApp() {
       <div className="lod-device">
         <div className="lod-notch" />
 
-        {step === "home" && <HomeScreen onChooseCategory={chooseCategory} />}
+        {view === "attorney" && portalAttorney && (
+          <PortalScreen title="Attorney Portal" tag="Team access" onBack={returnHome}>
+            <AttorneyDashboard
+              step={attorneyDashStep}
+              attorney={portalAttorney}
+              category={portalCategory}
+              caseRecord={caseRecord}
+              agreement={agreement}
+              payment={payment}
+              casePacket={casePacket}
+              onStep={setAttorneyDashStep}
+            />
+          </PortalScreen>
+        )}
 
-        {step === "attorneys" && selectedCategory && (
+        {view === "admin" && (
+          <PortalScreen title="Admin Console" tag="Internal operations" onBack={returnHome}>
+            <AdminDashboard step={adminDashStep} onStep={setAdminDashStep} />
+          </PortalScreen>
+        )}
+
+        {view === "client" && step === "home" && (
+          <HomeScreen
+            onChooseCategory={chooseCategory}
+            onOpenAttorney={() => openPortal("attorney")}
+            onOpenAdmin={() => openPortal("admin")}
+          />
+        )}
+
+        {view === "client" && step === "attorneys" && selectedCategory && (
           <AttorneysScreen
             category={selectedCategory}
             attorneys={availableAttorneys}
@@ -375,7 +420,7 @@ export function ClientApp() {
           />
         )}
 
-        {step === "call" && selectedAttorney && selectedCategory && (
+        {view === "client" && step === "call" && selectedAttorney && selectedCategory && (
           <CallScreen
             attorney={selectedAttorney}
             category={selectedCategory}
@@ -387,7 +432,7 @@ export function ClientApp() {
           />
         )}
 
-        {step === "agreement" && selectedAttorney && selectedCategory && caseRecord && (
+        {view === "client" && step === "agreement" && selectedAttorney && selectedCategory && caseRecord && (
           <AgreementScreen
             attorney={selectedAttorney}
             category={selectedCategory}
@@ -402,7 +447,7 @@ export function ClientApp() {
           />
         )}
 
-        {step === "payment" && selectedAttorney && selectedCategory && caseRecord && selectedPracticeArea && (
+        {view === "client" && step === "payment" && selectedAttorney && selectedCategory && caseRecord && selectedPracticeArea && (
           <PaymentScreen
             attorney={selectedAttorney}
             category={selectedCategory}
@@ -413,7 +458,7 @@ export function ClientApp() {
           />
         )}
 
-        {step === "acceptance" && selectedAttorney && selectedCategory && caseRecord && agreement && (
+        {view === "client" && step === "acceptance" && selectedAttorney && selectedCategory && caseRecord && agreement && (
           <AcceptanceScreen
             attorney={selectedAttorney}
             caseRecord={caseRecord}
@@ -424,7 +469,7 @@ export function ClientApp() {
           />
         )}
 
-        {step === "confirmed" && selectedAttorney && selectedCategory && caseRecord && agreement && casePacket && (
+        {view === "client" && step === "confirmed" && selectedAttorney && selectedCategory && caseRecord && agreement && casePacket && (
           <ConfirmedScreen
             attorney={selectedAttorney}
             caseRecord={caseRecord}
@@ -435,7 +480,7 @@ export function ClientApp() {
           />
         )}
 
-        {step === "packet" && (
+        {view === "client" && step === "packet" && (
           <CasePacketScreen
             attorney={selectedAttorney}
             category={selectedCategory}
@@ -451,7 +496,7 @@ export function ClientApp() {
           />
         )}
 
-        {step === "integrations" && (
+        {view === "client" && step === "integrations" && (
           <IntegrationSuiteScreen
             casePacket={casePacket}
             selectedIntegration={selectedIntegration}
@@ -462,7 +507,7 @@ export function ClientApp() {
           />
         )}
 
-        {bioAttorney && selectedCategory && (
+        {view === "client" && bioAttorney && selectedCategory && (
           <FullBioSheet
             attorney={bioAttorney}
             category={selectedCategory}
@@ -475,7 +520,15 @@ export function ClientApp() {
   );
 }
 
-function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCategory) => void }) {
+function HomeScreen({
+  onChooseCategory,
+  onOpenAttorney,
+  onOpenAdmin
+}: {
+  onChooseCategory: (category: LegalCategory) => void;
+  onOpenAttorney: () => void;
+  onOpenAdmin: () => void;
+}) {
   return (
     <section className="lod-screen is-active">
       <div className="lod-home-head">
@@ -507,6 +560,42 @@ function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCa
           );
         })}
       </div>
+
+      <div className="lod-portal-entry">
+        <div>
+          <span className="lod-portal-kicker">Portals</span>
+          <p>Team access stays inside the app frame.</p>
+        </div>
+        <div className="lod-portal-actions">
+          <button onClick={onOpenAttorney}>
+            <span>AT</span>
+            Attorney
+          </button>
+          <button onClick={onOpenAdmin}>
+            <span>AD</span>
+            Admin
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PortalScreen({
+  title,
+  tag,
+  onBack,
+  children
+}: {
+  title: string;
+  tag: string;
+  onBack: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="lod-screen lod-portal-screen is-active">
+      <Topbar onBack={onBack} title={title} tag={tag} />
+      <div className="lod-portal-shell">{children}</div>
     </section>
   );
 }
