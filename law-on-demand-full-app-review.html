@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Law On Demand - Full App Review File</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Source+Serif+4:opsz,wght@8..60,600..900&display=swap" rel="stylesheet">
+<style>
+  /*
+    Law On Demand - standalone reviewer file.
+    This is intentionally a single HTML file with embedded CSS, embedded app data,
+    and embedded JavaScript. It mirrors the clickable React prototype flow:
+    Home -> legal issue -> attorneys -> video call -> agreement -> payment or
+    no-upfront-retainer branch -> attorney acceptance -> representation started
+    -> case packet -> Integration Suite. Attorney and admin portals are included
+    inside the same app shell.
+  */
+
+  :root {
+    --navy-deep: #07142d;
+    --navy-mid: #16294f;
+    --blue: #2f5fe8;
+    --amber: #e8a33d;
+    --amber-soft: #fcebd2;
+    --green: #1a7a3c;
+    --green-soft: #e4f4e9;
+    --paper: #ffffff;
+    --mist: #f5f6f8;
+    --mist-2: #eef1f6;
+    --ink: #10131a;
+    --graphite: #535e70;
+    --slate: #8390a3;
+    --line: #e4e7ec;
+    --danger: #c43d3d;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 50% -12%, rgba(232, 163, 61, 0.18), transparent 34%),
+      linear-gradient(180deg, #f3f5f9 0%, #e5e9f1 100%);
+    color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  button,
+  input,
+  textarea {
+    font: inherit;
+    letter-spacing: 0;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .device {
+    width: 390px;
+    max-width: 100%;
+    height: 812px;
+    background: var(--navy-deep);
+    border: 11px solid var(--navy-deep);
+    border-radius: 50px;
+    box-shadow:
+      0 42px 90px -30px rgba(11, 28, 61, 0.72),
+      0 18px 32px -24px rgba(11, 28, 61, 0.8),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .device:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 70;
+    pointer-events: none;
+    border-radius: 38px;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+      inset 0 24px 38px rgba(255, 255, 255, 0.07);
+  }
+
+  .notch {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 154px;
+    height: 30px;
+    background: var(--navy-deep);
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+    z-index: 80;
+    box-shadow: 0 10px 20px rgba(7, 20, 45, 0.18);
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+    padding-top: 34px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  }
+
+  .screen.active {
+    display: flex;
+  }
+
+  .screen::-webkit-scrollbar,
+  .portal-main::-webkit-scrollbar,
+  .portal-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+
+  .glyph {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--amber);
+    color: var(--navy-deep);
+    display: grid;
+    place-items: center;
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 900;
+    font-size: 18px;
+    box-shadow: 0 10px 22px rgba(232, 163, 61, 0.28);
+  }
+
+  .brand-row span,
+  .kicker,
+  .step-tag,
+  .status-pill,
+  .field-label,
+  .mono,
+  .portal-kicker,
+  .stat-label {
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .brand-row span {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #4f5b6c;
+  }
+
+  .home-head {
+    padding: 28px 24px 10px;
+  }
+
+  h1,
+  h2,
+  h3,
+  .stat-value {
+    font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+  }
+
+  .home-head h1 {
+    max-width: 300px;
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 0.92;
+    color: var(--navy-deep);
+  }
+
+  .sub {
+    max-width: 315px;
+    margin-top: 10px;
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: #4e5969;
+  }
+
+  .tile-grid {
+    padding: 20px 24px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .issue-tile {
+    min-height: 126px;
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--navy-mid);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: 0 12px 30px -24px rgba(11, 28, 61, 0.9);
+    padding: 17px 15px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+
+  .issue-tile.no-retainer {
+    border-left-color: var(--green);
+  }
+
+  .issue-tile:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    min-height: 112px;
+  }
+
+  .issue-tile:active {
+    transform: scale(0.98);
+  }
+
+  .issue-icon {
+    width: 40px;
+    height: 32px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f7fb;
+    box-shadow: inset 0 0 0 1px rgba(11, 28, 61, 0.06);
+    color: var(--navy-mid);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 900;
+    margin-bottom: 9px;
+  }
+
+  .issue-name {
+    display: block;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--navy-deep);
+  }
+
+  .issue-count {
+    display: block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #6d7787;
+  }
+
+  .fee-chip {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 10px;
+    border-radius: 999px;
+    padding: 5px 8px;
+    background: rgba(22, 41, 79, 0.08);
+    color: var(--navy-mid);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 8.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .fee-chip.green {
+    background: var(--green-soft);
+    color: var(--green);
+  }
+
+  .portal-entry {
+    margin: 18px 24px 26px;
+    padding: 14px;
+    border: 1px solid rgba(11, 28, 61, 0.07);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.74);
+    box-shadow: 0 14px 34px -30px rgba(11, 28, 61, 0.82);
+    display: grid;
+    gap: 12px;
+  }
+
+  .portal-kicker {
+    font-size: 10.5px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6f7a8b;
+  }
+
+  .portal-entry p {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4e5969;
+  }
+
+  .portal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .portal-actions button {
+    min-height: 48px;
+    border: 1px solid rgba(11, 28, 61, 0.08);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--navy-deep);
+    font-size: 12.5px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .portal-actions span {
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: var(--mist-2);
+    color: var(--navy-mid);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 2px 24px 18px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(14px);
+  }
+
+  .back {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: var(--mist-2);
+    color: var(--navy-deep);
+    font-size: 20px;
+    font-weight: 900;
+    cursor: pointer;
+    flex: 0 0 auto;
+  }
+
+  .topbar h2 {
+    font-size: 25px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--navy-deep);
+  }
+
+  .step-tag {
+    margin-top: 5px;
+    font-size: 10.5px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6f7a8b;
+  }
+
+  .results-head {
+    padding: 16px 24px 4px;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8a5a00;
+    background: var(--amber-soft);
+    padding: 6px 10px 6px 8px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(232, 163, 61, 0.2);
+  }
+
+  .status-pill.green {
+    background: var(--green-soft);
+    color: var(--green);
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--green);
+    box-shadow: 0 0 0 4px rgba(26, 122, 60, 0.12);
+  }
+
+  .attorney-list {
+    padding: 14px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .attorney-card {
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 18px 42px -32px rgba(11, 28, 61, 0.82);
+  }
+
+  .attorney-card.featured {
+    border-color: rgba(232, 163, 61, 0.72);
+    box-shadow:
+      0 20px 44px -30px rgba(11, 28, 61, 0.88),
+      0 0 0 4px rgba(232, 163, 61, 0.12);
+  }
+
+  .attorney-row {
+    display: flex;
+    gap: 14px;
+  }
+
+  .photo-button {
+    position: relative;
+    flex: 0 0 auto;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 999px;
+  }
+
+  .photo-ring {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    padding: 4px;
+    background: conic-gradient(from 0deg, var(--green), var(--amber), #f6c879, var(--green));
+    box-shadow: 0 14px 30px -18px rgba(11, 28, 61, 0.95);
+    display: block;
+  }
+
+  .photo-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(180deg, #ffffff 0%, #eef2f7 100%);
+    color: var(--navy-deep);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 25px;
+    font-weight: 900;
+  }
+
+  .online-dot {
+    position: absolute;
+    right: 0;
+    bottom: 1px;
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    background: var(--green);
+    box-shadow: 0 0 0 4px rgba(26, 122, 60, 0.12);
+  }
+
+  .attorney-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .attorney-name {
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--navy-deep);
+  }
+
+  .firm {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--graphite);
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
+  }
+
+  .tag {
+    border-radius: 8px;
+    padding: 5px 8px;
+    background: var(--mist);
+    color: var(--navy-mid);
+    font-size: 10.5px;
+    font-weight: 900;
+  }
+
+  .tag.fee {
+    color: #8a5a00;
+    background: var(--amber-soft);
+  }
+
+  .tag.green {
+    color: var(--green);
+    background: var(--green-soft);
+  }
+
+  .summary {
+    margin-top: 12px;
+    color: var(--graphite);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.58;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .bio-link,
+  .connect-button {
+    min-height: 42px;
+    border-radius: 12px;
+    border: none;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .bio-link {
+    flex: 1;
+    background: transparent;
+    color: var(--navy-deep);
+    border: 1px solid var(--line);
+  }
+
+  .connect-button {
+    flex: 2;
+    background: var(--navy-deep);
+    color: #fff;
+  }
+
+  .tap-note {
+    margin-top: 8px;
+    color: #5f6b7d;
+    font-size: 11.5px;
+    font-weight: 900;
+  }
+
+  .call-screen {
+    background: var(--navy-deep);
+    color: #fff;
+  }
+
+  .call-stage {
+    flex: 1;
+    min-height: 378px;
+    margin: 2px 14px 14px;
+    border-radius: 26px;
+    overflow: hidden;
+    position: relative;
+    background:
+      radial-gradient(circle at 50% 34%, rgba(232, 163, 61, 0.18), transparent 28%),
+      linear-gradient(160deg, #172b54 0%, #07142d 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .call-top {
+    position: absolute;
+    inset: 18px 16px auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .call-card,
+  .timer-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(7, 20, 45, 0.68);
+    padding: 10px;
+  }
+
+  .call-card {
+    max-width: 178px;
+  }
+
+  .call-name {
+    font-size: 15px;
+    font-weight: 900;
+  }
+
+  .call-issue {
+    margin-top: 3px;
+    color: #c9d3ea;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .timer-card {
+    text-align: right;
+  }
+
+  .timer-label {
+    color: #f6c879;
+    font-size: 9.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .timer-time {
+    margin-top: 4px;
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .video-avatar {
+    position: absolute;
+    left: 50%;
+    top: 47%;
+    transform: translate(-50%, -50%);
+    width: 122px;
+    height: 122px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--amber);
+    color: var(--navy-deep);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 36px;
+    font-weight: 900;
+    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.04);
+  }
+
+  .self-video {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    width: 74px;
+    height: 100px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .disclaimer {
+    margin: 0 24px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #d7deed;
+    padding: 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
+  .call-actions {
+    padding: 0 24px 24px;
+  }
+
+  .primary,
+  .secondary,
+  .danger,
+  .hire {
+    width: 100%;
+    min-height: 52px;
+    border: none;
+    border-radius: 15px;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .primary,
+  .hire {
+    background: var(--amber);
+    color: #432e00;
+    box-shadow: 0 16px 28px -20px rgba(232, 163, 61, 0.9);
+  }
+
+  .secondary {
+    background: #fff;
+    color: var(--navy-deep);
+    border: 1px solid var(--line);
+  }
+
+  .danger {
+    background: rgba(196, 61, 61, 0.14);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .call-row {
+    display: grid;
+    grid-template-columns: 1fr 0.8fr;
+    gap: 9px;
+    margin-top: 9px;
+  }
+
+  .call-row button {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: 12px;
+  }
+
+  .content-pad {
+    padding: 18px 24px 28px;
+  }
+
+  .summary-box,
+  .agreement-box,
+  .wait-card,
+  .confirm-card,
+  .packet-section,
+  .portal-card {
+    border: 1px solid rgba(11, 28, 61, 0.06);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: 0 16px 38px -32px rgba(11, 28, 61, 0.82);
+  }
+
+  .summary-box {
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .row:last-child {
+    border-bottom: none;
+  }
+
+  .row-label {
+    font-size: 12px;
+    color: var(--graphite);
+    font-weight: 700;
+  }
+
+  .row-value {
+    text-align: right;
+    font-size: 12.5px;
+    color: var(--navy-deep);
+    font-weight: 900;
+  }
+
+  .row-value.ok {
+    color: var(--green);
+  }
+
+  .field-label {
+    display: block;
+    margin: 14px 0 8px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--slate);
+  }
+
+  .agreement-box {
+    padding: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.6;
+    color: var(--graphite);
+  }
+
+  .signature {
+    width: 100%;
+    height: 58px;
+    border: none;
+    border-bottom: 2px solid var(--navy-deep);
+    background: transparent;
+    color: var(--navy-deep);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 28px;
+    font-weight: 800;
+    outline: none;
+  }
+
+  .check-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 16px 0;
+    color: var(--graphite);
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
+  .fee-note {
+    border-radius: 14px;
+    padding: 12px;
+    background: var(--amber-soft);
+    color: #7b5205;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.45;
+    margin-bottom: 16px;
+  }
+
+  .fee-note.green {
+    background: var(--green-soft);
+    color: var(--green);
+  }
+
+  .wait-wrap,
+  .confirm-wrap {
+    padding: 44px 24px 28px;
+    text-align: center;
+  }
+
+  .spinner {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 7px solid var(--mist-2);
+    border-top-color: var(--amber);
+    margin: 0 auto 20px;
+    animation: spin 1.1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .wait-wrap h2,
+  .confirm-wrap h2 {
+    color: var(--navy-deep);
+    font-size: 27px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .wait-wrap p,
+  .confirm-wrap p {
+    margin: 10px auto 20px;
+    color: var(--graphite);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .wait-card,
+  .confirm-card {
+    text-align: left;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+
+  .demo-tag {
+    margin-bottom: 10px;
+    color: var(--slate);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .confirm-badge {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 20px;
+    background: var(--green);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 900;
+    box-shadow: 0 18px 34px -24px rgba(7, 20, 45, 0.92);
+  }
+
+  .packet-section {
+    margin: 0 24px 14px;
+    padding: 14px;
+  }
+
+  .packet-title {
+    margin-bottom: 10px;
+    color: var(--slate);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .integration-copy {
+    padding: 16px 24px 2px;
+    color: var(--graphite);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .integration-grid {
+    padding: 16px 24px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .integration-card {
+    min-height: 86px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 30px -26px rgba(11, 28, 61, 0.8);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .integration-card.active {
+    border-color: rgba(232, 163, 61, 0.75);
+    background: #fff9ef;
+  }
+
+  .integration-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--mist-2);
+    color: var(--navy-mid);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    font-weight: 900;
+  }
+
+  .integration-name {
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 900;
+    color: var(--navy-deep);
+  }
+
+  .export-success {
+    margin: 0 24px 16px;
+    border-radius: 12px;
+    padding: 12px;
+    background: var(--green-soft);
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+    display: none;
+  }
+
+  .export-success.active {
+    display: block;
+  }
+
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+    background: rgba(11, 28, 61, 0.55);
+  }
+
+  .sheet-backdrop.active {
+    display: flex;
+  }
+
+  .bio-sheet {
+    width: 100%;
+    max-height: 86%;
+    overflow: auto;
+    padding: 18px;
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+    background: var(--paper);
+  }
+
+  .sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .sheet-head h2 {
+    font-size: 22px;
+    font-weight: 900;
+  }
+
+  .close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--mist-2);
+    color: var(--navy-deep);
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .portal-screen {
+    background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+  }
+
+  .portal-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 10px 16px;
+    background: var(--navy-deep);
+  }
+
+  .portal-tab {
+    flex: 0 0 auto;
+    border: none;
+    border-radius: 999px;
+    padding: 9px 11px;
+    background: transparent;
+    color: #c9d3ea;
+    font-size: 11.5px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .portal-tab.active {
+    background: #fff;
+    color: var(--navy-deep);
+  }
+
+  .portal-main {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px 20px 28px;
+  }
+
+  .portal-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .portal-head h3 {
+    color: var(--navy-deep);
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .portal-head p {
+    margin-top: 5px;
+    color: var(--graphite);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .portal-card {
+    padding: 15px;
+    margin-bottom: 14px;
+  }
+
+  .portal-card h4 {
+    margin-bottom: 4px;
+    color: var(--navy-deep);
+    font-size: 16px;
+    font-weight: 900;
+  }
+
+  .portal-card p {
+    margin-bottom: 12px;
+    color: var(--graphite);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
+  .seg {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .seg button,
+  .mini-button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 13px;
+    background: var(--navy-deep);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .seg button:not(.active) {
+    background: #fff;
+    color: var(--navy-deep);
+    border: 1px solid var(--line);
+  }
+
+  .incoming-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .row-name {
+    color: var(--navy-deep);
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .row-meta {
+    margin-top: 3px;
+    color: var(--graphite);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .stat {
+    border-radius: 16px;
+    background: var(--mist);
+    padding: 12px;
+  }
+
+  .stat-value {
+    color: var(--navy-deep);
+    font-size: 25px;
+    font-weight: 900;
+  }
+
+  .stat-label {
+    margin-top: 4px;
+    color: var(--graphite);
+    font-size: 9.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .table td,
+  .table th {
+    padding: 9px 7px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .table th {
+    color: var(--slate);
+    font-size: 9.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .notes-area {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    resize: vertical;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  @media (max-width: 520px) {
+    body {
+      padding: 0;
+      display: block;
+      background: #fff;
+    }
+
+    .device {
+      width: 100%;
+      height: 100dvh;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .device:before,
+    .notch {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="device" aria-label="Law On Demand mobile app prototype">
+  <div class="notch"></div>
+
+  <section class="screen active" id="homeScreen">
+    <div class="home-head">
+      <div class="brand-row">
+        <div class="glyph">L</div>
+        <span>Law On Demand</span>
+      </div>
+      <h1>Tap your legal issue.</h1>
+      <p class="sub">Connect with an available attorney in 3 clicks. No waiting, no forms first.</p>
+    </div>
+
+    <div class="tile-grid" id="categoryGrid"></div>
+
+    <div class="portal-entry">
+      <div>
+        <span class="portal-kicker">Portals</span>
+        <p>Team access stays inside the app frame.</p>
+      </div>
+      <div class="portal-actions">
+        <button type="button" onclick="openPortal('attorney')"><span>AT</span>Attorney</button>
+        <button type="button" onclick="openPortal('admin')"><span>AD</span>Admin</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="attorneysScreen">
+    <div class="topbar">
+      <button class="back" type="button" onclick="goHome()" aria-label="Back">&lt;</button>
+      <div>
+        <h2 id="attorneyScreenTitle">Available Attorneys</h2>
+        <div class="step-tag">Tap a photo to connect</div>
+      </div>
+    </div>
+    <div class="results-head">
+      <span class="status-pill"><span class="live-dot"></span><span id="availableCount">0 attorneys available now</span></span>
+    </div>
+    <div class="attorney-list" id="attorneyList"></div>
+  </section>
+
+  <section class="screen call-screen" id="callScreen">
+    <div class="call-stage">
+      <div class="call-top">
+        <div class="call-card">
+          <div class="call-name" id="callAttorneyName">Attorney Name</div>
+          <div class="call-issue" id="callIssue">Legal issue - Preliminary Guidance</div>
+        </div>
+        <div class="timer-card">
+          <div class="timer-label">Preliminary Guidance Period</div>
+          <div class="timer-time" id="timer">05:00</div>
+        </div>
+      </div>
+      <div class="video-avatar" id="callInitials">AT</div>
+      <div class="self-video">You</div>
+    </div>
+    <div class="disclaimer">
+      Preliminary guidance only. Full representation begins after you sign, pay if required, and the attorney accepts.
+    </div>
+    <div class="call-actions">
+      <button class="hire" type="button" onclick="beginHire()">Hire Me Now</button>
+      <div class="call-row">
+        <button class="secondary" type="button" onclick="showAttorneys()">Choose Another Attorney</button>
+        <button class="danger" type="button" onclick="showAttorneys()">End Call</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="agreementScreen">
+    <div class="topbar">
+      <button class="back" type="button" onclick="showCall()" aria-label="Back">&lt;</button>
+      <div>
+        <h2 id="agreementTitle">Agreement</h2>
+        <div class="step-tag">Sign to proceed</div>
+      </div>
+    </div>
+    <div class="content-pad">
+      <div class="summary-box">
+        <div class="row"><span class="row-label">Attorney</span><span class="row-value" id="agreementAttorney">-</span></div>
+        <div class="row"><span class="row-label">Matter</span><span class="row-value" id="agreementMatter">-</span></div>
+        <div class="row"><span class="row-label">Agreement type</span><span class="row-value" id="agreementType">-</span></div>
+      </div>
+
+      <span class="field-label">Agreement</span>
+      <div class="agreement-box" id="agreementCopy"></div>
+
+      <span class="field-label">Type your full legal name to sign</span>
+      <input class="signature" id="signatureInput" value="Avery Johnson" aria-label="Electronic signature">
+
+      <label class="check-row">
+        <input id="signatureConsent" type="checkbox" checked>
+        <span>I agree this constitutes my electronic signature and I consent to be bound by this agreement.</span>
+      </label>
+
+      <div class="fee-note" id="agreementFeeNote"></div>
+      <button class="primary" type="button" id="agreementContinue" onclick="signAgreement()">Continue</button>
+    </div>
+  </section>
+
+  <section class="screen" id="paymentScreen">
+    <div class="topbar">
+      <button class="back" type="button" onclick="showAgreement()" aria-label="Back">&lt;</button>
+      <div>
+        <h2>Pay Retainer</h2>
+        <div class="step-tag">Final step - retainer matters</div>
+      </div>
+    </div>
+    <div class="content-pad">
+      <div class="summary-box">
+        <div class="row"><span class="row-label">Retainer amount</span><span class="row-value" id="retainerAmount">$0</span></div>
+        <div class="row"><span class="row-label">Card on file</span><span class="row-value">Visa ending 4242</span></div>
+        <div class="row"><span class="row-label">Charged only</span><span class="row-value">after signature</span></div>
+      </div>
+      <div class="fee-note">Your card will be charged the full retainer amount. This does not create representation until the attorney accepts.</div>
+      <button class="primary" type="button" id="payButton" onclick="payRetainer()">Pay Retainer</button>
+    </div>
+  </section>
+
+  <section class="screen" id="acceptanceScreen">
+    <div class="wait-wrap">
+      <div class="spinner"></div>
+      <h2>Waiting for attorney acceptance</h2>
+      <p id="acceptanceCopy">Your signed agreement has been sent to the attorney.</p>
+      <div class="wait-card">
+        <div class="row"><span class="row-label">Signature</span><span class="row-value ok">Complete</span></div>
+        <div class="row"><span class="row-label" id="paymentStatusLabel">Payment</span><span class="row-value ok" id="paymentStatusValue">No upfront retainer</span></div>
+        <div class="row"><span class="row-label">Attorney acceptance</span><span class="row-value">Pending</span></div>
+      </div>
+      <div class="demo-tag">Demo control - simulates the attorney dashboard</div>
+      <button class="primary" type="button" onclick="attorneyAccepts()">Attorney Accepts</button>
+    </div>
+  </section>
+
+  <section class="screen" id="confirmedScreen">
+    <div class="confirm-wrap">
+      <div class="confirm-badge">OK</div>
+      <h2>Representation Started</h2>
+      <p id="confirmedCopy">The attorney has accepted your signed agreement. Full representation has begun.</p>
+      <div class="confirm-card" id="confirmedDetails"></div>
+      <button class="primary" type="button" onclick="showPacket()">View Case Packet</button>
+      <div style="height:10px"></div>
+      <button class="secondary" type="button" onclick="goHome()">Back to Home</button>
+    </div>
+  </section>
+
+  <section class="screen" id="packetScreen">
+    <div class="topbar">
+      <button class="back" type="button" onclick="showConfirmed()" aria-label="Back">&lt;</button>
+      <div>
+        <h2>Case Packet</h2>
+        <div class="step-tag" id="caseRefTop">Case LOD-DEMO</div>
+      </div>
+    </div>
+    <div id="packetContent"></div>
+    <div class="content-pad" style="padding-top:4px">
+      <button class="primary" type="button" onclick="showIntegrations()">Export to Integration Suite</button>
+    </div>
+  </section>
+
+  <section class="screen" id="integrationsScreen">
+    <div class="topbar">
+      <button class="back" type="button" onclick="showPacket()" aria-label="Back">&lt;</button>
+      <div>
+        <h2>Integration Suite</h2>
+        <div class="step-tag">Send case to your software</div>
+      </div>
+    </div>
+    <p class="integration-copy">Attorney-owned export destination. Law On Demand brings the client; the attorney's existing software handles the case.</p>
+    <div class="integration-grid" id="integrationGrid"></div>
+    <div class="export-success" id="exportSuccess">Case packet exported.</div>
+    <div class="content-pad" style="padding-top:0">
+      <button class="primary" type="button" onclick="exportCase()">Send to Case Software</button>
+    </div>
+  </section>
+
+  <section class="screen portal-screen" id="portalScreen">
+    <div class="topbar">
+      <button class="back" type="button" onclick="goHome()" aria-label="Back">&lt;</button>
+      <div>
+        <h2 id="portalTitle">Attorney Portal</h2>
+        <div class="step-tag" id="portalTag">Team access</div>
+      </div>
+    </div>
+    <div class="portal-tabs" id="portalTabs"></div>
+    <div class="portal-main" id="portalMain"></div>
+  </section>
+
+  <div class="sheet-backdrop" id="bioSheet">
+    <section class="bio-sheet">
+      <div class="sheet-head">
+        <h2>Full Bio</h2>
+        <button class="close" type="button" onclick="closeBio()" aria-label="Close">X</button>
+      </div>
+      <div id="bioContent"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const client = {
+    name: "Avery Johnson",
+    email: "avery.johnson@example.com",
+    phone: "(555) 014-8821"
+  };
+
+  const categories = [
+    {
+      id: "dui",
+      name: "DUI / DWI",
+      slug: "dui-dwi",
+      glyph: "DUI",
+      feeModel: "retainer",
+      retainerAmount: 2500
+    },
+    {
+      id: "traffic",
+      name: "Traffic Stop / Infraction",
+      slug: "traffic-stop-infraction",
+      glyph: "TR",
+      feeModel: "retainer",
+      retainerAmount: 1500
+    },
+    {
+      id: "auto",
+      name: "Auto Accident",
+      slug: "auto-accident",
+      glyph: "AA",
+      feeModel: "contingency",
+      retainerAmount: 0
+    },
+    {
+      id: "injury",
+      name: "Personal Injury",
+      slug: "personal-injury",
+      glyph: "PI",
+      feeModel: "contingency",
+      retainerAmount: 0
+    },
+    {
+      id: "criminal",
+      name: "Criminal Defence",
+      slug: "criminal-defence",
+      glyph: "CD",
+      feeModel: "retainer",
+      retainerAmount: 3500
+    }
+  ];
+
+  const attorneys = [
+    {
+      id: "mitchell",
+      name: "Sarah Mitchell",
+      firm: "Mitchell Defence Group",
+      jurisdiction: "NSW",
+      specialties: ["dui", "traffic"],
+      shortBio: "Former prosecutor focused on urgent DUI, licence, and traffic matters with same-day court readiness.",
+      fullBio: "Sarah Mitchell has handled hundreds of urgent driving and criminal traffic matters. Her practice focuses on early risk assessment, evidence preservation, police interaction guidance, and fast transition from preliminary guidance to full representation.",
+      retainers: { dui: 2500, traffic: 1500 }
+    },
+    {
+      id: "rodriguez",
+      name: "Elena Rodriguez",
+      firm: "Rodriguez Injury Law",
+      jurisdiction: "CA",
+      specialties: ["auto", "injury"],
+      shortBio: "Injury attorney for accident victims who need immediate guidance without an upfront retainer.",
+      fullBio: "Elena Rodriguez represents injured clients after crashes, premises incidents, and serious negligence claims. She helps clients preserve records, avoid insurance missteps, and move into representation without an upfront retainer where appropriate.",
+      retainers: {}
+    },
+    {
+      id: "grant",
+      name: "Michael Grant",
+      firm: "Grant Criminal Defence",
+      jurisdiction: "NY",
+      specialties: ["criminal", "dui"],
+      shortBio: "Criminal defence attorney for urgent arrests, investigations, and high-risk police contact.",
+      fullBio: "Michael Grant handles criminal defence matters from initial contact through court appearances. His preliminary guidance focuses on immediate risk control, silence/counsel rights, and fast engagement when representation is needed.",
+      retainers: { criminal: 3500, dui: 3000 }
+    },
+    {
+      id: "chen",
+      name: "Vivian Chen",
+      firm: "Chen Traffic Counsel",
+      jurisdiction: "TX",
+      specialties: ["traffic", "auto"],
+      shortBio: "Fast-response attorney for traffic stops, citations, post-stop questions, and accident-adjacent issues.",
+      fullBio: "Vivian Chen works with clients after traffic stops, citations, and accident-related enforcement questions. She is available for immediate preliminary guidance and can open representation quickly when needed.",
+      retainers: { traffic: 1200 }
+    }
+  ];
+
+  const integrations = [
+    ["Cl", "Clio"],
+    ["MC", "MyCase"],
+    ["PP", "PracticePanther"],
+    ["FV", "Filevine"],
+    ["LM", "Lawmatics"],
+    ["SB", "Smokeball"],
+    ["CP", "CASEpeer"],
+    ["ZP", "Zapier"],
+    ["MK", "Make"],
+    ["PDF", "PDF Export"],
+    ["Mail", "Email Export"]
+  ];
+
+  const state = {
+    category: null,
+    attorney: null,
+    elapsed: 0,
+    timerId: null,
+    caseRef: "LOD-DEMO",
+    agreementSigned: false,
+    paymentStatus: "Not started",
+    attorneyAccepted: false,
+    selectedIntegration: "Clio",
+    portalType: "attorney",
+    portalTab: "availability"
+  };
+
+  function money(value) {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value || 0);
+  }
+
+  function initials(name) {
+    return name.split(" ").map(function(part) { return part.charAt(0); }).join("").slice(0, 2).toUpperCase();
+  }
+
+  function isNoUpfront(category) {
+    return category.feeModel === "contingency" || category.feeModel === "no_retainer";
+  }
+
+  function feeText(category, attorney) {
+    if (isNoUpfront(category)) return "No upfront retainer";
+    const amount = attorney && attorney.retainers[category.id] ? attorney.retainers[category.id] : category.retainerAmount;
+    return "Retainer " + money(amount);
+  }
+
+  function categoryKind(category) {
+    return isNoUpfront(category) ? "No upfront retainer" : "Retainer required";
+  }
+
+  function availableAttorneys(categoryId) {
+    return attorneys.filter(function(attorney) {
+      return attorney.specialties.indexOf(categoryId) >= 0;
+    });
+  }
+
+  function screen(id) {
+    document.querySelectorAll(".screen").forEach(function(node) { node.classList.remove("active"); });
+    document.getElementById(id).classList.add("active");
+  }
+
+  function stopTimer() {
+    if (state.timerId) window.clearInterval(state.timerId);
+    state.timerId = null;
+  }
+
+  function goHome() {
+    stopTimer();
+    screen("homeScreen");
+  }
+
+  function renderHome() {
+    const grid = document.getElementById("categoryGrid");
+    grid.innerHTML = categories.map(function(category) {
+      const count = availableAttorneys(category.id).length;
+      const green = isNoUpfront(category) ? " green" : "";
+      const noRetainer = isNoUpfront(category) ? " no-retainer" : "";
+      return '<button class="issue-tile' + noRetainer + '" type="button" onclick="chooseCategory(\'' + category.id + '\')">' +
+        '<span class="issue-icon">' + category.glyph + '</span>' +
+        '<span class="issue-name">' + category.name + '</span>' +
+        '<span class="issue-count">' + count + ' online</span>' +
+        '<span class="fee-chip' + green + '">' + categoryKind(category) + '</span>' +
+      '</button>';
+    }).join("");
+  }
+
+  function chooseCategory(categoryId) {
+    state.category = categories.find(function(category) { return category.id === categoryId; });
+    state.attorney = null;
+    state.agreementSigned = false;
+    state.paymentStatus = "Not started";
+    state.attorneyAccepted = false;
+    renderAttorneys();
+    screen("attorneysScreen");
+  }
+
+  function renderAttorneys() {
+    const list = availableAttorneys(state.category.id);
+    document.getElementById("attorneyScreenTitle").textContent = "Available Attorneys";
+    document.getElementById("availableCount").textContent = list.length + " attorneys available now";
+    document.getElementById("attorneyList").innerHTML = list.map(function(attorney, index) {
+      const feeClass = isNoUpfront(state.category) ? " green" : " fee";
+      return '<article class="attorney-card ' + (index === 0 ? "featured" : "") + '">' +
+        '<div class="attorney-row">' +
+          '<button class="photo-button" type="button" onclick="startCall(\'' + attorney.id + '\')" aria-label="Start video call with ' + attorney.name + '">' +
+            '<span class="photo-ring"><span class="photo-inner">' + initials(attorney.name) + '</span></span><span class="online-dot"></span>' +
+          '</button>' +
+          '<div class="attorney-info">' +
+            '<div class="attorney-name">' + attorney.name + '</div>' +
+            '<div class="firm">' + attorney.firm + '</div>' +
+            '<div class="tags">' +
+              '<span class="tag">' + state.category.name + '</span>' +
+              '<span class="tag' + feeClass + '">' + feeText(state.category, attorney) + '</span>' +
+              '<span class="tag">' + attorney.jurisdiction + '</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<p class="summary">' + attorney.shortBio + '</p>' +
+        '<div class="card-actions">' +
+          '<button class="bio-link" type="button" onclick="openBio(\'' + attorney.id + '\')">Full Bio</button>' +
+          '<button class="connect-button" type="button" onclick="startCall(\'' + attorney.id + '\')">Connect Now</button>' +
+        '</div>' +
+        '<p class="tap-note">Tap photo to call</p>' +
+      '</article>';
+    }).join("");
+  }
+
+  function showAttorneys() {
+    stopTimer();
+    renderAttorneys();
+    screen("attorneysScreen");
+  }
+
+  function openBio(attorneyId) {
+    const attorney = attorneys.find(function(item) { return item.id === attorneyId; });
+    const feeClass = isNoUpfront(state.category) ? " green" : " fee";
+    document.getElementById("bioContent").innerHTML =
+      '<div class="attorney-row">' +
+        '<button class="photo-button" type="button" onclick="closeBio(); startCall(\'' + attorney.id + '\')">' +
+          '<span class="photo-ring"><span class="photo-inner">' + initials(attorney.name) + '</span></span><span class="online-dot"></span>' +
+        '</button>' +
+        '<div class="attorney-info">' +
+          '<div class="attorney-name">' + attorney.name + '</div>' +
+          '<div class="firm">' + attorney.firm + '</div>' +
+          '<div class="tags"><span class="tag">' + state.category.name + '</span><span class="tag' + feeClass + '">' + feeText(state.category, attorney) + '</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<p class="summary">' + attorney.fullBio + '</p>' +
+      '<button class="primary" type="button" onclick="closeBio(); startCall(\'' + attorney.id + '\')">Tap photo to call</button>';
+    document.getElementById("bioSheet").classList.add("active");
+  }
+
+  function closeBio() {
+    document.getElementById("bioSheet").classList.remove("active");
+  }
+
+  function startCall(attorneyId) {
+    closeBio();
+    state.attorney = attorneys.find(function(attorney) { return attorney.id === attorneyId; });
+    state.elapsed = 0;
+    document.getElementById("callAttorneyName").textContent = state.attorney.name;
+    document.getElementById("callIssue").textContent = state.category.name + " - Preliminary Guidance";
+    document.getElementById("callInitials").textContent = initials(state.attorney.name);
+    updateTimer();
+    stopTimer();
+    state.timerId = window.setInterval(function() {
+      state.elapsed += 1;
+      updateTimer();
+    }, 1000);
+    screen("callScreen");
+  }
+
+  function updateTimer() {
+    const remaining = Math.max(0, 300 - state.elapsed);
+    const mins = String(Math.floor(remaining / 60)).padStart(2, "0");
+    const secs = String(remaining % 60).padStart(2, "0");
+    document.getElementById("timer").textContent = mins + ":" + secs;
+  }
+
+  function showCall() {
+    screen("callScreen");
+  }
+
+  function agreementName() {
+    if (state.category.feeModel === "retainer") return "Retainer Agreement";
+    if (state.category.feeModel === "contingency") return "Contingency Fee Agreement";
+    return "No-Upfront-Retainer Agreement";
+  }
+
+  function beginHire() {
+    stopTimer();
+    state.caseRef = "LOD-" + String(Math.floor(80000 + Math.random() * 9000));
+    renderAgreement();
+    screen("agreementScreen");
+  }
+
+  function renderAgreement() {
+    const title = agreementName();
+    const retainerRequired = state.category.feeModel === "retainer";
+    const amount = state.attorney.retainers[state.category.id] || state.category.retainerAmount;
+    document.getElementById("agreementTitle").textContent = title;
+    document.getElementById("agreementAttorney").textContent = state.attorney.name;
+    document.getElementById("agreementMatter").textContent = state.category.name;
+    document.getElementById("agreementType").textContent = title;
+    document.getElementById("agreementCopy").textContent = retainerRequired
+      ? "This Retainer Agreement is entered into between " + client.name + " and " + state.attorney.firm + " for " + state.category.name + ". Full representation begins only after electronic signature, successful retainer payment, and attorney acceptance."
+      : "This Contingency Fee Agreement is entered into between " + client.name + " and " + state.attorney.firm + " for " + state.category.name + ". No upfront retainer is required. Full representation begins only after electronic signature and attorney acceptance.";
+    const note = document.getElementById("agreementFeeNote");
+    note.className = "fee-note" + (retainerRequired ? "" : " green");
+    note.textContent = retainerRequired
+      ? "Retainer required for this matter. Your card will be charged " + money(amount) + " once signed."
+      : "No upfront retainer required for this matter.";
+    document.getElementById("agreementContinue").textContent = retainerRequired ? "Sign & Continue to Payment" : "Sign Agreement";
+  }
+
+  function showAgreement() {
+    renderAgreement();
+    screen("agreementScreen");
+  }
+
+  function signAgreement() {
+    const name = document.getElementById("signatureInput").value.trim();
+    const consent = document.getElementById("signatureConsent").checked;
+    if (!name || !consent) {
+      window.alert("Type the client name and confirm electronic signature consent.");
+      return;
+    }
+    state.agreementSigned = true;
+    if (state.category.feeModel === "retainer") {
+      const amount = state.attorney.retainers[state.category.id] || state.category.retainerAmount;
+      document.getElementById("retainerAmount").textContent = money(amount);
+      document.getElementById("payButton").textContent = "Pay Retainer - " + money(amount);
+      screen("paymentScreen");
+    } else {
+      state.paymentStatus = "No upfront retainer";
+      renderAcceptance();
+      screen("acceptanceScreen");
+    }
+  }
+
+  function payRetainer() {
+    state.paymentStatus = "Retainer paid";
+    renderAcceptance();
+    screen("acceptanceScreen");
+  }
+
+  function renderAcceptance() {
+    const retainerRequired = state.category.feeModel === "retainer";
+    document.getElementById("acceptanceCopy").textContent =
+      "Your signed agreement" + (retainerRequired ? " and retainer payment" : "") + " have been sent to " + state.attorney.name + ".";
+    document.getElementById("paymentStatusLabel").textContent = retainerRequired ? "Retainer payment" : "Payment";
+    document.getElementById("paymentStatusValue").textContent = retainerRequired ? state.paymentStatus : "No upfront retainer";
+  }
+
+  function attorneyAccepts() {
+    state.attorneyAccepted = true;
+    renderConfirmed();
+    screen("confirmedScreen");
+  }
+
+  function renderConfirmed() {
+    const retainerRequired = state.category.feeModel === "retainer";
+    document.getElementById("confirmedCopy").textContent = state.attorney.name + " has accepted your signed agreement. Full representation has begun.";
+    document.getElementById("confirmedDetails").innerHTML =
+      '<div class="row"><span class="row-label">Case reference</span><span class="row-value">' + state.caseRef + '</span></div>' +
+      '<div class="row"><span class="row-label">Agreement</span><span class="row-value ok">Fully executed</span></div>' +
+      '<div class="row"><span class="row-label">' + (retainerRequired ? "Retainer" : "Payment") + '</span><span class="row-value ok">' + (retainerRequired ? state.paymentStatus : "No upfront retainer") + '</span></div>' +
+      '<div class="row"><span class="row-label">Attorney</span><span class="row-value">' + state.attorney.name + '</span></div>';
+  }
+
+  function showConfirmed() {
+    renderConfirmed();
+    screen("confirmedScreen");
+  }
+
+  function showPacket() {
+    renderPacket();
+    screen("packetScreen");
+  }
+
+  function renderPacket() {
+    document.getElementById("caseRefTop").textContent = "Case " + state.caseRef;
+    document.getElementById("packetContent").innerHTML =
+      '<section class="packet-section"><div class="packet-title">Client</div>' +
+        '<div class="row"><span class="row-label">Name</span><span class="row-value">' + client.name + '</span></div>' +
+        '<div class="row"><span class="row-label">Contact</span><span class="row-value">' + client.email + '</span></div>' +
+      '</section>' +
+      '<section class="packet-section"><div class="packet-title">Attorney</div>' +
+        '<div class="row"><span class="row-label">Name</span><span class="row-value">' + state.attorney.name + '</span></div>' +
+        '<div class="row"><span class="row-label">Firm</span><span class="row-value">' + state.attorney.firm + '</span></div>' +
+      '</section>' +
+      '<section class="packet-section"><div class="packet-title">Matter</div>' +
+        '<div class="row"><span class="row-label">Type</span><span class="row-value">' + state.category.name + '</span></div>' +
+        '<div class="row"><span class="row-label">Agreement status</span><span class="row-value ok">Fully executed</span></div>' +
+        '<div class="row"><span class="row-label">Payment status</span><span class="row-value ok">' + state.paymentStatus + '</span></div>' +
+        '<div class="row"><span class="row-label">Attorney acceptance</span><span class="row-value ok">Accepted</span></div>' +
+      '</section>';
+  }
+
+  function showIntegrations() {
+    renderIntegrations();
+    screen("integrationsScreen");
+  }
+
+  function renderIntegrations() {
+    document.getElementById("integrationGrid").innerHTML = integrations.map(function(item) {
+      const active = state.selectedIntegration === item[1] ? " active" : "";
+      return '<button class="integration-card' + active + '" type="button" onclick="selectIntegration(\'' + item[1] + '\')">' +
+        '<span class="integration-icon">' + item[0] + '</span>' +
+        '<span class="integration-name">' + item[1] + '</span>' +
+      '</button>';
+    }).join("");
+  }
+
+  function selectIntegration(name) {
+    state.selectedIntegration = name;
+    document.getElementById("exportSuccess").classList.remove("active");
+    renderIntegrations();
+  }
+
+  function exportCase() {
+    const success = document.getElementById("exportSuccess");
+    success.textContent = "Case packet exported to " + state.selectedIntegration + ". PDF and JSON backups saved.";
+    success.classList.add("active");
+  }
+
+  function openPortal(type) {
+    state.portalType = type;
+    state.portalTab = type === "attorney" ? "availability" : "overview";
+    renderPortal();
+    screen("portalScreen");
+  }
+
+  function setPortalTab(tab) {
+    state.portalTab = tab;
+    renderPortal();
+  }
+
+  function portalTabs() {
+    if (state.portalType === "attorney") {
+      return [
+        ["availability", "Availability"],
+        ["video", "Video Room"],
+        ["agreement", "Agreement Review"],
+        ["case", "Case Management"],
+        ["integrations", "Integration Suite"]
+      ];
+    }
+    return [
+      ["overview", "Overview"],
+      ["attorneys", "Attorneys"],
+      ["cases", "Cases"]
+    ];
+  }
+
+  function renderPortal() {
+    const title = state.portalType === "attorney" ? "Attorney Portal" : "Admin Console";
+    document.getElementById("portalTitle").textContent = title;
+    document.getElementById("portalTag").textContent = state.portalType === "attorney" ? "Team access" : "Internal operations";
+    document.getElementById("portalTabs").innerHTML = portalTabs().map(function(tab) {
+      return '<button class="portal-tab ' + (state.portalTab === tab[0] ? "active" : "") + '" type="button" onclick="setPortalTab(\'' + tab[0] + '\')">' + tab[1] + '</button>';
+    }).join("");
+    document.getElementById("portalMain").innerHTML = state.portalType === "attorney" ? attorneyPortalHtml() : adminPortalHtml();
+  }
+
+  function portalContextCategory() {
+    return state.category || categories[0];
+  }
+
+  function portalContextAttorney() {
+    return state.attorney || availableAttorneys(portalContextCategory().id)[0];
+  }
+
+  function attorneyPortalHtml() {
+    const category = portalContextCategory();
+    const attorney = portalContextAttorney();
+    const ref = state.caseRef || "LOD-DEMO";
+    if (state.portalTab === "availability") {
+      return '<div class="portal-head"><div><h3>Availability</h3><p>Only online attorneys appear in instant client results.</p></div><span class="status-pill green"><span class="live-dot"></span>Online</span></div>' +
+        '<section class="portal-card"><h4>Your status</h4><p>Toggle this any time. It controls whether clients can reach you right now.</p><div class="seg"><button class="active">Available</button><button>Busy</button><button>Offline</button></div></section>' +
+        '<section class="portal-card"><h4>Incoming calls</h4><p>Clients who tapped your photo appear here in real time.</p><div class="incoming-row"><div><div class="row-name">' + client.name + '</div><div class="row-meta">' + category.name + ' - requesting now</div></div><button class="mini-button" onclick="setPortalTab(\'video\')">Accept</button></div></section>';
+    }
+    if (state.portalTab === "video") {
+      return '<div class="portal-head"><div><h3>Video Room</h3><p>' + ref + ' - Preliminary Guidance</p></div><span class="status-pill">Timer 02:47</span></div>' +
+        '<section class="portal-card" style="background:#07142d;color:#fff"><div style="height:160px;border-radius:16px;background:#172b54;display:grid;place-items:center;margin-bottom:12px">Client video</div><div class="row-name" style="color:#fff">' + client.name + '</div><div class="row-meta" style="color:#c9d3ea">' + category.name + ' - Preliminary guidance only</div></section>' +
+        '<section class="portal-card"><h4>Private notes</h4><p>Not visible to the client. Carries into the case packet if hired.</p><textarea class="notes-area">Advised client to preserve records and avoid missing deadlines. Client indicated intent to hire.</textarea></section>' +
+        '<button class="mini-button" onclick="setPortalTab(\'agreement\')">Client Tapped Hire Me Now</button>';
+    }
+    if (state.portalTab === "agreement") {
+      return '<div class="portal-head"><div><h3>Agreement Review</h3><p>Confirm terms before accepting the engagement.</p></div></div>' +
+        '<section class="portal-card"><h4>' + client.name + '</h4><p>' + category.name + ' - ' + (state.category ? agreementName() : categoryKind(category)) + '</p>' +
+        '<table class="table"><tbody><tr><td>Agreement</td><td>' + (state.agreementSigned ? "Signed electronically" : "Awaiting signature") + '</td></tr><tr><td>Payment</td><td>' + state.paymentStatus + '</td></tr><tr><td>Matter</td><td>' + category.name + '</td></tr></tbody></table>' +
+        '<label class="check-row"><input type="checkbox" checked><span>I accept this signed agreement and agree to represent this client.</span></label><button class="mini-button" onclick="setPortalTab(\'case\')">Accept Engagement</button></section>';
+    }
+    if (state.portalTab === "case") {
+      return '<div class="portal-head"><div><h3>Case Management</h3><p>' + ref + ' - Representation active</p></div><span class="status-pill green">Active</span></div>' +
+        '<section class="portal-card"><table class="table"><tbody><tr><td>Client</td><td>' + client.name + '</td></tr><tr><td>Matter</td><td>' + category.name + '</td></tr><tr><td>Agreement</td><td>' + (state.agreementSigned ? "Executed" : "Pending") + '</td></tr><tr><td>Payment</td><td>' + state.paymentStatus + '</td></tr><tr><td>Recording</td><td>Placeholder link</td></tr><tr><td>Documents</td><td>None uploaded</td></tr></tbody></table><button class="mini-button" style="margin-top:14px" onclick="setPortalTab(\'integrations\')">Export to Integration Suite</button></section>';
+    }
+    return '<div class="portal-head"><div><h3>Integration Suite</h3><p>Choose where new cases get sent automatically.</p></div></div>' +
+      '<div class="integration-grid" style="padding:0 0 14px">' + integrations.map(function(item, index) {
+        return '<div class="integration-card ' + (index === 0 ? "active" : "") + '"><span class="integration-icon">' + item[0] + '</span><span class="integration-name">' + item[1] + '</span></div>';
+      }).join("") + '</div><section class="portal-card"><h4>' + ref + '</h4><p>Sent to Clio. PDF and JSON backups generated automatically.</p><span class="status-pill green">Export successful</span></section>';
+  }
+
+  function adminPortalHtml() {
+    if (state.portalTab === "overview") {
+      return '<div class="portal-head"><div><h3>Overview</h3><p>Live platform activity.</p></div></div>' +
+        '<div class="stat-grid">' +
+          stat("1,204", "Total users") + stat("86", "Total attorneys") + stat("34", "Online now") + stat("512", "Total calls") +
+          stat("318", "Signed agreements") + stat("296", "Retained cases") + stat("$412K", "Retainer payments") + stat("7", "Pending approvals") +
+        '</div><section class="portal-card"><h4>Pending attorney approvals</h4><div class="incoming-row"><div><div class="row-name">Amara Osei</div><div class="row-meta">Family Law - Bar #NSW-88213</div></div><button class="mini-button" onclick="setPortalTab(\'attorneys\')">Review</button></div></section>';
+    }
+    if (state.portalTab === "attorneys") {
+      return '<div class="portal-head"><div><h3>Manage Attorneys</h3><p>Approve, suspend, or verify license status.</p></div></div>' +
+        '<section class="portal-card"><table class="table"><thead><tr><th>Name</th><th>Firm</th><th>Status</th></tr></thead><tbody>' +
+        '<tr><td>Sarah Mitchell</td><td>Mitchell Defence Group</td><td>Approved</td></tr>' +
+        '<tr><td>Elena Rodriguez</td><td>Rodriguez Injury Law</td><td>Approved</td></tr>' +
+        '<tr><td>Michael Grant</td><td>Grant Criminal Defence</td><td>Approved</td></tr>' +
+        '<tr><td>Amara Osei</td><td>Osei Family Law</td><td>Pending</td></tr>' +
+        '</tbody></table></section>';
+    }
+    return '<div class="portal-head"><div><h3>Manage Cases</h3><p>Full pipeline status per case.</p></div></div>' +
+      '<section class="portal-card"><table class="table"><thead><tr><th>Case</th><th>Matter</th><th>Status</th></tr></thead><tbody>' +
+      '<tr><td>LOD-88213</td><td>DUI / DWI</td><td>Active</td></tr>' +
+      '<tr><td>LOD-88214</td><td>Auto Accident</td><td>Active</td></tr>' +
+      '<tr><td>LOD-88215</td><td>Criminal Defence</td><td>Awaiting acceptance</td></tr>' +
+      '</tbody></table></section>';
+  }
+
+  function stat(value, label) {
+    return '<article class="stat"><div class="stat-value">' + value + '</div><div class="stat-label">' + label + '</div></article>';
+  }
+
+  renderHome();
+</script>
+</body>
+</html>
