@@ -1,5 +1,5 @@
-import { AttorneyDashboard } from "@/components/attorney-dashboard";
+import { ClientApp } from "@/components/client-app";
 
 export default function AttorneyPage() {
-  return <AttorneyDashboard />;
+  return <ClientApp initialMode="attorney" />;
 }

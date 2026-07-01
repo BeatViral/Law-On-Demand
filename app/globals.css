@@ -368,6 +368,7 @@ img {
   background: rgba(255, 255, 255, 0.78);
   font-weight: 800;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .lod-topbar {
@@ -2082,6 +2083,29 @@ img {
     display: none;
   }
 
+  .lod-app-root--workspace {
+    padding: 10px;
+    gap: 10px;
+    background: #e7ebf2;
+  }
+
+  .lod-app-root--workspace .lod-mode-tabs {
+    position: sticky;
+    top: 8px;
+    z-index: 100;
+    display: flex;
+    width: 100%;
+    margin: 0;
+    border-radius: 14px;
+  }
+
+  .lod-app-root--workspace .lod-mode-tab {
+    flex: 1;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 11.5px;
+  }
+
   .lod-device {
     width: 100%;
     height: 100dvh;
@@ -2099,8 +2123,9 @@ img {
   }
 
   .lod-desktop {
-    border-radius: 0;
-    min-height: 100vh;
+    border-radius: 18px;
+    min-height: calc(100dvh - 76px);
+    box-shadow: 0 20px 54px -34px rgba(11, 28, 61, 0.75);
   }
 
   .lod-dash-layout {

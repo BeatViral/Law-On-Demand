@@ -101,7 +101,7 @@ export const demoAdmin: AdminUser = {
   id: "admin_demo",
   role: "admin",
   name: "Maya Admin",
-  email: "admin@lawyerondemand.test",
+  email: "admin@lawondemand.test",
   phone: "+1 555 0110"
 };
 

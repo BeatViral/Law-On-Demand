@@ -159,8 +159,8 @@ async function postJson<T>(path: string, body: unknown, fallback: () => T): Prom
   }
 }
 
-export function ClientApp() {
-  const [mode, setMode] = useState<AppMode>("client");
+export function ClientApp({ initialMode = "client" }: { initialMode?: AppMode } = {}) {
+  const [mode, setMode] = useState<AppMode>(initialMode);
   const [step, setStep] = useState<ClientStep>("home");
   const [attorneyDashStep, setAttorneyDashStep] = useState<AttorneyDashStep>("availability");
   const [adminDashStep, setAdminDashStep] = useState<AdminDashStep>("overview");
@@ -221,6 +221,16 @@ export function ClientApp() {
     setMode("client");
     setStep(nextStep);
     resetScroll();
+  }
+
+  function openAppMode(nextMode: AppMode) {
+    setMode(nextMode);
+    resetScroll();
+  }
+
+  function openAttorneyPortal() {
+    setAttorneyDashStep("availability");
+    openAppMode("attorney");
   }
 
   function resetEngagementState() {
@@ -366,7 +376,7 @@ export function ClientApp() {
   const activeCategory = selectedCategory ?? appCategories[0];
 
   return (
-    <main className="lod-app-root">
+    <main className={cn("lod-app-root", mode !== "client" && "lod-app-root--workspace")}>
       <div className="lod-meta-bar">
         <div className="lod-eyebrow">Production MVP Prototype</div>
         <h1>Law On Demand</h1>
@@ -374,16 +384,16 @@ export function ClientApp() {
       </div>
 
       <div className="lod-mode-tabs" aria-label="App mode">
-        <ModeTab active={mode === "client"} onClick={() => setMode("client")}>Client App</ModeTab>
-        <ModeTab active={mode === "attorney"} onClick={() => setMode("attorney")}>Attorney Portal</ModeTab>
-        <ModeTab active={mode === "admin"} onClick={() => setMode("admin")}>Admin Console</ModeTab>
+        <ModeTab active={mode === "client"} onClick={() => openAppMode("client")}>Client App</ModeTab>
+        <ModeTab active={mode === "attorney"} onClick={openAttorneyPortal}>Attorney Portal</ModeTab>
+        <ModeTab active={mode === "admin"} onClick={() => openAppMode("admin")}>Admin Console</ModeTab>
       </div>
 
       {mode === "client" && (
         <div className="lod-device">
           <div className="lod-notch" />
 
-          {step === "home" && <HomeScreen onChooseCategory={chooseCategory} />}
+          {step === "home" && <HomeScreen onChooseCategory={chooseCategory} onAttorneyPortal={openAttorneyPortal} />}
 
           {step === "attorneys" && selectedCategory && (
             <AttorneysScreen
@@ -522,7 +532,13 @@ function ModeTab({ active, onClick, children }: { active: boolean; onClick: () =
   );
 }
 
-function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCategory) => void }) {
+function HomeScreen({
+  onChooseCategory,
+  onAttorneyPortal
+}: {
+  onChooseCategory: (category: LegalCategory) => void;
+  onAttorneyPortal: () => void;
+}) {
   return (
     <section className="lod-screen is-active">
       <div className="lod-home-head">
@@ -561,9 +577,9 @@ function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCa
       </div>
 
       <div className="lod-home-foot">
-        <a className="lod-home-link" href={appPath("/attorney/")} aria-label="Open attorney portal">
+        <button className="lod-home-link" type="button" onClick={onAttorneyPortal} aria-label="Open attorney portal">
           Attorney Portal
-        </a>
+        </button>
       </div>
     </section>
   );
@@ -1095,7 +1111,7 @@ function AttorneyDashboard({
   return (
     <DashboardFrame
       title="Attorney Portal"
-      url="app.lawyerondemand.com/attorney"
+      url="app.lawondemand.com/attorney"
       sidebar={[
         ["availability", "Availability"],
         ["video", "Video Room"],
@@ -1211,7 +1227,7 @@ function AdminDashboard({ step, onStep }: { step: AdminDashStep; onStep: (step: 
   return (
     <DashboardFrame
       title="Admin Console"
-      url="app.lawyerondemand.com/admin"
+      url="app.lawondemand.com/admin"
       sidebar={[
         ["overview", "Overview"],
         ["attorneys", "Attorneys"],
