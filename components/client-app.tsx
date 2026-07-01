@@ -534,9 +534,9 @@ function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCa
         <p className="lod-sub">Connect with an available attorney in 3 clicks. No waiting, no forms first.</p>
       </div>
 
-      <div className="lod-legend">
-        <span><span className="lod-sw lod-sw--navy" />Retainer required</span>
-        <span><span className="lod-sw lod-sw--green" />No upfront retainer</span>
+      <div className="lod-legend" aria-label="Payment path guide">
+        <span className="lod-legend-item"><span className="lod-sw lod-sw--navy" />Retainer required</span>
+        <span className="lod-legend-item"><span className="lod-sw lod-sw--green" />No upfront retainer</span>
       </div>
 
       <div className="lod-tile-grid" id="urgent-categories">
@@ -552,6 +552,9 @@ function HomeScreen({ onChooseCategory }: { onChooseCategory: (category: LegalCa
               <span className="lod-issue-icon">{issueGlyph(category)}</span>
               <span className="lod-issue-name">{category.name}</span>
               <span className="lod-issue-count">{count} online</span>
+              <span className={cn("lod-issue-fee", isNoUpfront(category) && "lod-issue-fee--green")}>
+                {categoryKind(category)}
+              </span>
             </button>
           );
         })}

@@ -255,7 +255,7 @@ img {
   color: var(--graphite);
 }
 
-.lod-legend span {
+.lod-legend-item {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -327,6 +327,25 @@ img {
   color: var(--slate-soft);
   margin-top: 3px;
   display: block;
+}
+
+.lod-issue-fee {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  border-radius: 999px;
+  padding: 4px 7px;
+  background: rgba(22, 41, 79, 0.08);
+  color: var(--navy-mid);
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.lod-issue-fee--green {
+  background: var(--green-soft);
+  color: var(--green);
 }
 
 .lod-home-foot {
@@ -1601,16 +1620,18 @@ img {
   color: #4f5b6c;
 }
 
-.lod-legend span {
-  flex: 1;
-  min-height: 28px;
-  padding: 7px 8px;
-  border: 1px solid rgba(11, 28, 61, 0.08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.72);
+.lod-legend-item {
+  flex: 0 0 auto;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  white-space: nowrap;
 }
 
 .lod-sw {
+  flex: 0 0 auto;
   width: 10px;
   height: 10px;
   border-radius: 3px;
@@ -1682,6 +1703,22 @@ img {
   font-size: 11px;
   font-weight: 700;
   color: #6d7787;
+}
+
+.lod-issue-fee {
+  margin-top: 10px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: rgba(22, 41, 79, 0.08);
+  color: #16294f;
+}
+
+.lod-issue-fee--green {
+  background: #e4f4e9;
+  color: #1a7a3c;
 }
 
 .lod-home-foot {
