@@ -389,7 +389,7 @@ export function ClientApp() {
               <span>
                 <span className="block text-lg font-black leading-tight sm:text-2xl">Lawyer On Demand</span>
                 <span className="block text-xs font-bold text-graphite sm:text-sm">
-                  An available attorney in 3 clicks.
+                  Connect with an available attorney in 3 clicks.
                 </span>
               </span>
             </button>
@@ -422,15 +422,14 @@ export function ClientApp() {
               <div className="space-y-6">
                 <Badge tone="red" className="text-sm">
                   <Siren className="mr-2 h-4 w-4" />
-                  Urgent legal access
+                  Connect with an available attorney in 3 clicks.
                 </Badge>
                 <div className="space-y-4">
                   <h1 className="max-w-3xl text-5xl font-black leading-[0.96] text-ink sm:text-6xl lg:text-7xl">
-                    An available attorney in 3 clicks.
+                    Choose issue. Tap attorney. Start video.
                   </h1>
                   <p className="max-w-2xl text-lg font-bold leading-8 text-graphite sm:text-xl">
-                    Start the app, choose the legal issue, then tap the attorney initials to open a preliminary
-                    guidance call.
+                    Open app -&gt; choose issue -&gt; tap attorney photo or initials -&gt; video call starts.
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -452,9 +451,9 @@ export function ClientApp() {
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {[
-                    ["1", "Pick issue"],
-                    ["2", "Tap attorney"],
-                    ["3", "Sign + hire"]
+                    ["1", "Open app"],
+                    ["2", "Choose issue"],
+                    ["3", "Tap attorney photo"]
                   ].map(([number, label]) => (
                     <div
                       className="flex min-h-16 items-center gap-3 rounded-[8px] border border-slate-200 bg-white px-4 shadow-sm"
@@ -577,7 +576,8 @@ export function ClientApp() {
                 <Badge tone="green">Click 2 of 3</Badge>
                 <h1 className="mt-4 text-4xl font-black text-ink sm:text-6xl">{selectedCategory.name}</h1>
                 <p className="mt-3 text-lg font-bold leading-8 text-graphite">
-                  Available attorneys appear instantly. Tap the attorney initials panel to open the mock video room.
+                  Available attorneys appear instantly. Tap the attorney photo or initials panel to open the mock video
+                  room.
                 </p>
               </div>
               <Panel className="p-5">
@@ -627,7 +627,7 @@ export function ClientApp() {
                           <p className="text-base font-black text-cobalt">{attorney.firmName}</p>
                         </div>
                         <div className="grid gap-2 sm:grid-cols-2">
-                          <CardFact label="Specialty" value={selectedCategory.name} />
+                          <CardFact label="Legal Specialty" value={selectedCategory.name} />
                           <CardFact label="Fee Type" value={area.feeModel === "retainer" ? "Retainer" : area.feeModel === "contingency" ? "Contingency / no upfront retainer" : "Custom review"} />
                         </div>
                         <p className="text-sm font-bold leading-6 text-graphite">{attorney.shortBio}</p>
@@ -1137,7 +1137,7 @@ export function ClientApp() {
                 <AttorneyIdentityArt attorney={bioAttorney} actionLabel="" className="absolute inset-0 rounded-none" />
                 <span className="absolute inset-x-4 bottom-4 flex min-h-14 items-center justify-center gap-2 rounded-[8px] bg-white/95 px-4 text-lg font-black text-ink shadow-panel">
                   <Video className="h-5 w-5 text-cobalt" />
-                  Tap initials to call
+                  Tap photo or initials to call
                 </span>
               </button>
               <div className="space-y-4">
