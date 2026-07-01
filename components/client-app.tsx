@@ -14,11 +14,9 @@ import {
   Gavel,
   Landmark,
   MapPin,
-  PhoneCall,
   ReceiptText,
   ShieldCheck,
   Siren,
-  Sparkles,
   UserRoundCheck,
   Video,
   X
@@ -71,6 +69,64 @@ function feeLabel(attorney: Attorney, category: LegalCategory) {
   if (area.feeModel === "contingency") return `${area.contingencyPercentage ?? 33}% contingency`;
   if (area.feeModel === "no_retainer") return "No upfront retainer";
   return area.customFeeText ?? "Custom fee terms";
+}
+
+function attorneyInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function AttorneyIdentityArt({
+  attorney,
+  actionLabel = "Connect now",
+  compact = false,
+  className = ""
+}: {
+  attorney: Attorney;
+  actionLabel?: string;
+  compact?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative flex min-h-full overflow-hidden rounded-[8px] bg-ink text-white ${className}`}
+      aria-hidden="true"
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,#155dfc_0%,#02c7ee_44%,#11a36a_100%)]" />
+      <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.18)_1px,transparent_1px)] [background-size:22px_22px]" />
+      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full border border-white/25" />
+      <div className="absolute -bottom-16 left-6 h-44 w-44 rounded-full border border-white/20" />
+      <div className={`relative flex w-full flex-col justify-between p-4 ${compact ? "min-h-40" : "min-h-60"}`}>
+        <div className="flex items-center justify-between gap-3">
+          <span className="rounded-[8px] bg-white/16 px-2 py-1 text-[10px] font-black uppercase text-white">
+            Verified attorney
+          </span>
+          <span className="h-3 w-3 rounded-full bg-emerald-300 shadow-[0_0_24px_rgba(110,231,183,0.85)]" />
+        </div>
+        <div>
+          <div
+            className={`grid place-items-center rounded-[8px] border border-white/30 bg-white/95 font-black text-ink shadow-panel ${
+              compact ? "h-16 w-16 text-2xl" : "h-24 w-24 text-4xl"
+            }`}
+          >
+            {attorneyInitials(attorney.name)}
+          </div>
+          <p className={`mt-4 font-black leading-tight ${compact ? "text-lg" : "text-3xl"}`}>{attorney.name}</p>
+          <p className="mt-1 text-sm font-bold text-cyan-50">{attorney.firmName}</p>
+        </div>
+        {actionLabel && (
+          <span className="mt-4 flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-white/95 px-3 text-base font-black text-ink shadow-panel">
+            <Video className="h-5 w-5 text-cobalt" />
+            {actionLabel}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 async function postJson<T>(path: string, body: unknown, fallback: () => T): Promise<T> {
@@ -385,11 +441,7 @@ export function ClientApp() {
                             window.setTimeout(() => connectNow(attorney), 50);
                           }}
                         >
-                          <img
-                            className="h-36 w-full object-cover"
-                            src={attorney.profilePhotoUrl}
-                            alt={`${attorney.name} attorney portrait`}
-                          />
+                          <AttorneyIdentityArt attorney={attorney} actionLabel="" compact className="rounded-b-none" />
                           <span className="block p-3">
                             <span className="block text-base font-black text-ink">{attorney.name}</span>
                             <span className="block text-xs font-bold text-graphite">{attorney.firmName}</span>
@@ -474,15 +526,7 @@ export function ClientApp() {
                     disabled={busy}
                     aria-label={`Start video call with ${attorney.name}`}
                   >
-                    <img
-                      className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                      src={attorney.profilePhotoUrl}
-                      alt={`${attorney.name} attorney portrait`}
-                    />
-                    <span className="absolute inset-x-3 bottom-3 flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-white/95 px-3 text-base font-black text-ink shadow-panel">
-                      <Video className="h-5 w-5 text-cobalt" />
-                      Connect now
-                    </span>
+                    <AttorneyIdentityArt attorney={attorney} />
                   </button>
                   <div className="flex flex-col justify-between gap-4">
                     <div className="space-y-3">
@@ -526,12 +570,12 @@ export function ClientApp() {
           <section className="grid gap-5 py-6 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="overflow-hidden rounded-[8px] bg-ink shadow-legal-glow">
               <div className="relative min-h-[520px]">
-                <img
-                  className="absolute inset-0 h-full w-full object-cover opacity-72"
-                  src={selectedAttorney.profilePhotoUrl}
-                  alt={`${selectedAttorney.name} on video call`}
+                <AttorneyIdentityArt
+                  attorney={selectedAttorney}
+                  actionLabel=""
+                  className="absolute inset-0 rounded-none opacity-85"
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,17,31,0.18),rgba(9,17,31,0.88))]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(9,17,31,0.05),rgba(9,17,31,0.88))]" />
                 <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                   <Badge tone="green">Live video room</Badge>
                   <Badge tone="cyan">{videoCall?.videoRoomId ?? "room-ready"}</Badge>
@@ -845,11 +889,7 @@ export function ClientApp() {
                 onClick={() => connectNow(bioAttorney)}
                 aria-label={`Start video call with ${bioAttorney.name}`}
               >
-                <img
-                  className="absolute inset-0 h-full w-full object-cover"
-                  src={bioAttorney.profilePhotoUrl}
-                  alt={`${bioAttorney.name} attorney portrait`}
-                />
+                <AttorneyIdentityArt attorney={bioAttorney} actionLabel="" className="absolute inset-0 rounded-none" />
                 <span className="absolute inset-x-4 bottom-4 flex min-h-14 items-center justify-center gap-2 rounded-[8px] bg-white/95 px-4 text-lg font-black text-ink shadow-panel">
                   <Video className="h-5 w-5 text-cobalt" />
                   Tap photo to call

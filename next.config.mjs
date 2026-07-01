@@ -10,15 +10,6 @@ const nextConfig = {
   experimental: {
     typedRoutes: false
   },
-  images: {
-    unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com"
-      }
-    ]
-  },
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
     NEXT_PUBLIC_STATIC_EXPORT: isStaticExport ? "true" : "false"

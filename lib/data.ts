@@ -115,8 +115,7 @@ export const attorneys: Attorney[] = [
     firmName: "Mitchell Defence Group",
     barLicenseNumber: "CA-482901",
     licenseStatus: "approved",
-    profilePhotoUrl:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=85",
+    profilePhotoUrl: "",
     shortBio: "DUI defence attorney focused on fast roadside guidance and license protection.",
     fullBio:
       "Sarah Mitchell has 14 years of criminal defence experience, with a dedicated focus on DUI, DWI, implied consent, field sobriety, and license suspension matters. Her practice is built around urgent response, clear client communication, and careful transition from preliminary guidance into formal representation only after engagement terms are accepted.",
@@ -158,8 +157,7 @@ export const attorneys: Attorney[] = [
     firmName: "Carter Traffic Law",
     barLicenseNumber: "NY-711204",
     licenseStatus: "approved",
-    profilePhotoUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&q=85",
+    profilePhotoUrl: "",
     shortBio: "Traffic court lawyer handling citations, license points, and urgent stop questions.",
     fullBio:
       "James Carter represents drivers in traffic infraction, reckless driving, and suspended-license matters. He is known for practical first-step guidance, efficient document review, and a clear retainer process when formal representation is appropriate.",
@@ -201,8 +199,7 @@ export const attorneys: Attorney[] = [
     firmName: "Rodriguez Injury Law",
     barLicenseNumber: "TX-309477",
     licenseStatus: "approved",
-    profilePhotoUrl:
-      "https://images.unsplash.com/photo-1534751516642-a1af1ef26a56?auto=format&fit=crop&w=900&q=85",
+    profilePhotoUrl: "",
     shortBio: "Auto accident attorney focused on evidence preservation and medical-care next steps.",
     fullBio:
       "Elena Rodriguez helps injury victims after vehicle crashes, rideshare collisions, and uninsured motorist incidents. Her practice typically uses contingency fee agreements, so clients can begin the engagement process without an upfront retainer after the attorney accepts the matter.",
@@ -244,8 +241,7 @@ export const attorneys: Attorney[] = [
     firmName: "Grant Criminal Defence",
     barLicenseNumber: "FL-884217",
     licenseStatus: "approved",
-    profilePhotoUrl:
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=900&q=85",
+    profilePhotoUrl: "",
     shortBio: "Criminal defence attorney for arrest, questioning, bail, and first-appearance issues.",
     fullBio:
       "Michael Grant represents clients in felony, misdemeanor, and pre-charge investigations. His preliminary guidance calls are designed to protect immediate rights and determine whether a formal retainer should be offered by the firm.",
@@ -279,8 +275,7 @@ export const attorneys: Attorney[] = [
     firmName: "Shah Personal Injury",
     barLicenseNumber: "IL-650118",
     licenseStatus: "approved",
-    profilePhotoUrl:
-      "https://images.unsplash.com/photo-1607746882042-944635dfe10e?auto=format&fit=crop&w=900&q=85",
+    profilePhotoUrl: "",
     shortBio: "Personal injury attorney for urgent claim intake, photos, treatment, and next steps.",
     fullBio:
       "Priya Shah handles personal injury, premises liability, and serious accident cases. Her firm commonly works on contingency, which means no upfront retainer is required when the attorney accepts the signed engagement.",

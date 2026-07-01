@@ -28,6 +28,15 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Panel } from "./ui/panel";
 
+function attorneyInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 const integrationOptions: Array<{ key: IntegrationType; label: string }> = [
   { key: "clio", label: "Clio" },
   { key: "mycase", label: "MyCase" },
@@ -65,11 +74,9 @@ export function AttorneyDashboard() {
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-4 rounded-[8px] border border-slate-200 bg-white p-4 shadow-panel sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <img
-              className="h-20 w-20 rounded-[8px] object-cover"
-              src={attorney.profilePhotoUrl}
-              alt={`${attorney.name} portrait`}
-            />
+            <div className="grid h-20 w-20 place-items-center rounded-[8px] bg-[linear-gradient(135deg,#155dfc,#02c7ee,#11a36a)] text-2xl font-black text-white shadow-panel">
+              {attorneyInitials(attorney.name)}
+            </div>
             <div>
               <Badge tone="green">Attorney dashboard</Badge>
               <h1 className="mt-2 text-3xl font-black sm:text-5xl">{attorney.name}</h1>
