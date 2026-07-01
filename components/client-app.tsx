@@ -550,11 +550,6 @@ function HomeScreen({
         <p className="lod-sub">Connect with an available attorney in 3 clicks. No waiting, no forms first.</p>
       </div>
 
-      <div className="lod-legend" aria-label="Payment path guide">
-        <span className="lod-legend-item"><span className="lod-sw lod-sw--navy" />Retainer required</span>
-        <span className="lod-legend-item"><span className="lod-sw lod-sw--green" />No upfront retainer</span>
-      </div>
-
       <div className="lod-tile-grid" id="urgent-categories">
         {appCategories.map((category) => {
           const count = getAvailableAttorneys(category.id).length;

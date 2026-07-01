@@ -247,31 +247,8 @@ img {
   color: var(--graphite);
 }
 
-.lod-legend {
-  padding: 14px 22px 0;
-  display: flex;
-  gap: 14px;
-  font-size: 10.5px;
-  color: var(--graphite);
-}
-
-.lod-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.lod-sw {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-}
-
-.lod-sw--navy { background: var(--navy-mid); }
-.lod-sw--green { background: var(--green); }
-
 .lod-tile-grid {
-  padding: 14px 22px 0;
+  padding: 18px 22px 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -1626,33 +1603,8 @@ img {
   color: #4e5969;
 }
 
-.lod-legend {
-  padding: 16px 24px 0;
-  gap: 8px;
-  font-size: 10px;
-  font-weight: 800;
-  color: #4f5b6c;
-}
-
-.lod-legend-item {
-  flex: 0 0 auto;
-  min-height: auto;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  white-space: nowrap;
-}
-
-.lod-sw {
-  flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-}
-
 .lod-tile-grid {
-  padding: 14px 24px 0;
+  padding: 20px 24px 0;
   gap: 12px;
 }
 
