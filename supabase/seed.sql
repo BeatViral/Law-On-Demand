@@ -17,6 +17,8 @@ insert into public.users (id, role, name, email, phone) values
   ('10000000-0000-0000-0000-000000000004', 'attorney', 'Elena Rodriguez', 'elena@rodriguezinjury.example', '+1 555 0203'),
   ('10000000-0000-0000-0000-000000000005', 'attorney', 'Michael Grant', 'michael@grantdefence.example', '+1 555 0204'),
   ('10000000-0000-0000-0000-000000000006', 'attorney', 'Priya Shah', 'priya@shahinjury.example', '+1 555 0205'),
+  ('10000000-0000-0000-0000-000000000008', 'attorney', 'Nadia Brooks', 'nadia@brooksfamily.example', '+1 555 0206'),
+  ('10000000-0000-0000-0000-000000000009', 'attorney', 'Omar Patel', 'omar@patelcontracts.example', '+1 555 0207'),
   ('10000000-0000-0000-0000-000000000007', 'admin', 'Maya Admin', 'admin@lawyerondemand.test', '+1 555 0110')
 on conflict (email) do update set name = excluded.name, role = excluded.role, phone = excluded.phone;
 
@@ -33,17 +35,27 @@ insert into public.attorney_profiles (
   ('30000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000003', 'Carter Traffic Law', 'NY-711204', 'approved', '', 'Traffic court lawyer handling citations and license points.', 'Eleven years representing drivers in traffic infraction and suspended-license matters.', 11, array['English'], '88 Court St, Brooklyn, NY', array['New York','New Jersey'], array['10001','10007','11201','11217'], 'online', 4.8, 'active', 'premium'),
   ('30000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000004', 'Rodriguez Injury Law', 'TX-309477', 'approved', '', 'Auto accident attorney focused on evidence and medical-care next steps.', 'Sixteen years helping injury victims after crashes and insurance disputes.', 16, array['English','Spanish'], '1900 Main St, Dallas, TX', array['Texas'], array['75201','75204','75219','75001'], 'online', 5.0, 'active', 'priority_queue'),
   ('30000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000005', 'Grant Criminal Defence', 'FL-884217', 'approved', '', 'Criminal defence attorney for arrest and first-appearance issues.', 'Nineteen years representing felony, misdemeanor, and pre-charge investigation clients.', 19, array['English'], '200 S Biscayne Blvd, Miami, FL', array['Florida','Georgia'], array['33131','33132','33139','30303'], 'online', 4.9, 'active', 'featured'),
-  ('30000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000006', 'Shah Personal Injury', 'IL-650118', 'approved', '', 'Personal injury attorney for urgent claim intake and next steps.', 'Twelve years handling personal injury, premises liability, and serious accident cases.', 12, array['English','Hindi','Gujarati'], '1 N LaSalle St, Chicago, IL', array['Illinois','Indiana'], array['60601','60602','60603','60611'], 'online', 4.9, 'active', 'premium')
+  ('30000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000006', 'Shah Personal Injury', 'IL-650118', 'approved', '', 'Personal injury attorney for urgent claim intake and next steps.', 'Twelve years handling personal injury, premises liability, and serious accident cases.', 12, array['English','Hindi','Gujarati'], '1 N LaSalle St, Chicago, IL', array['Illinois','Indiana'], array['60601','60602','60603','60611'], 'online', 4.9, 'active', 'premium'),
+  ('30000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000008', 'Brooks Family Counsel', 'WA-771509', 'approved', '', 'Family law attorney for custody, divorce, and protective-order next steps.', 'Thirteen years handling custody, parenting plans, divorce filings, and protective orders.', 13, array['English'], '701 5th Ave, Seattle, WA', array['Washington','Oregon'], array['98101','98104','98109','97204'], 'online', 4.8, 'active', 'premium'),
+  ('30000000-0000-0000-0000-000000000007', '10000000-0000-0000-0000-000000000009', 'Patel Contract Studio', 'CO-418220', 'approved', '', 'Contract attorney for urgent review, breach questions, and negotiation strategy.', 'Ten years advising clients on contract review, vendor disputes, service agreements, and negotiations.', 10, array['English','Hindi'], '1801 California St, Denver, CO', array['Colorado','Arizona'], array['80202','80203','85004','85012'], 'online', 4.7, 'active', 'basic')
 on conflict (id) do nothing;
 
 insert into public.attorney_practice_areas (
   attorney_id, legal_category_id, fee_model, retainer_required, retainer_amount, contingency_percentage, preliminary_guidance_minutes
 ) values
   ('30000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 'retainer', true, 2500, null, 5),
+  ('30000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000102', 'retainer', true, 1500, null, 4),
   ('30000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000103', 'retainer', true, 750, null, 6),
+  ('30000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000102', 'retainer', true, 950, null, 5),
   ('30000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000104', 'contingency', false, null, 33, 7),
+  ('30000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000105', 'contingency', false, null, 33, 7),
   ('30000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000106', 'retainer', true, 5000, null, 5),
-  ('30000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000105', 'contingency', false, null, 33, 8)
+  ('30000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000105', 'contingency', false, null, 33, 8),
+  ('30000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000104', 'contingency', false, null, 33, 8),
+  ('30000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000107', 'custom', false, null, null, 6),
+  ('30000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000109', 'custom', false, null, null, 5),
+  ('30000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000108', 'custom', false, null, null, 6),
+  ('30000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000109', 'custom', false, null, null, 5)
 on conflict (attorney_id, legal_category_id) do update
 set fee_model = excluded.fee_model,
     retainer_required = excluded.retainer_required,
@@ -56,6 +68,8 @@ insert into public.attorney_integrations (attorney_id, integration_type, connect
   ('30000000-0000-0000-0000-000000000002', 'mycase', false),
   ('30000000-0000-0000-0000-000000000003', 'lawmatics', false),
   ('30000000-0000-0000-0000-000000000004', 'filevine', false),
-  ('30000000-0000-0000-0000-000000000005', 'zapier', false)
+  ('30000000-0000-0000-0000-000000000005', 'zapier', false),
+  ('30000000-0000-0000-0000-000000000006', 'practicepanther', false),
+  ('30000000-0000-0000-0000-000000000007', 'make', false)
 on conflict (attorney_id, integration_type) do nothing;
 

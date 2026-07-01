@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -8,12 +8,16 @@ import {
   Check,
   ChevronRight,
   CircleDollarSign,
+  CloudUpload,
   Clock3,
+  DatabaseZap,
   Download,
   FileSignature,
   Gavel,
   Landmark,
   MapPin,
+  MonitorCheck,
+  PlugZap,
   ReceiptText,
   ShieldCheck,
   Siren,
@@ -40,6 +44,7 @@ import { Panel } from "./ui/panel";
 
 type Step =
   | "home"
+  | "categories"
   | "results"
   | "call"
   | "post-call"
@@ -47,7 +52,10 @@ type Step =
   | "signature"
   | "payment"
   | "pending"
-  | "confirmed";
+  | "confirmed"
+  | "attorney-dashboard"
+  | "admin-dashboard"
+  | "integrations";
 
 type AcceptanceResponse = {
   caseRecord: CaseRecord;
@@ -69,6 +77,22 @@ function feeLabel(attorney: Attorney, category: LegalCategory) {
   if (area.feeModel === "contingency") return `${area.contingencyPercentage ?? 33}% contingency`;
   if (area.feeModel === "no_retainer") return "No upfront retainer";
   return area.customFeeText ?? "Custom fee terms";
+}
+
+function categoryFlowLabel(category: LegalCategory) {
+  if (category.defaultFeeModel === "retainer") return "Retainer flow";
+  if (category.defaultFeeModel === "contingency") return "No-upfront-retainer flow";
+  return "Custom review flow";
+}
+
+function feeTone(category: LegalCategory) {
+  if (category.defaultFeeModel === "retainer") return "gold" as const;
+  if (category.defaultFeeModel === "contingency") return "cyan" as const;
+  return "blue" as const;
+}
+
+function resetScroll() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function attorneyInitials(name: string) {
@@ -163,8 +187,7 @@ export function ClientApp() {
 
   const availableAttorneys = useMemo(() => {
     if (!selectedCategory) return [];
-    const matching = getAvailableAttorneys(selectedCategory.id);
-    return matching.length ? matching : attorneys.slice(0, 3);
+    return getAvailableAttorneys(selectedCategory.id);
   }, [selectedCategory]);
 
   const selectedPracticeArea =
@@ -202,12 +225,34 @@ export function ClientApp() {
     return () => window.clearInterval(timer);
   }, [step]);
 
+  function openStep(nextStep: Step) {
+    setStep(nextStep);
+    resetScroll();
+  }
+
+  function resetEngagementState() {
+    setSelectedAttorney(null);
+    setBioAttorney(null);
+    setVideoCall(null);
+    setElapsed(0);
+    setCaseRecord(null);
+    setAgreement(null);
+    setPayment(null);
+    setCasePacket(null);
+    setTypedSignature("");
+    setConsent(false);
+  }
+
+  function startLegalHelp() {
+    resetEngagementState();
+    setSelectedCategory(null);
+    openStep("categories");
+  }
+
   function chooseCategory(category: LegalCategory) {
     setSelectedCategory(category);
-    setSelectedAttorney(null);
-    setElapsed(0);
-    setStep("results");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    resetEngagementState();
+    openStep("results");
   }
 
   async function connectNow(attorney: Attorney) {
@@ -238,9 +283,8 @@ export function ClientApp() {
     setVideoCall(call);
     setElapsed(0);
     setBioAttorney(null);
-    setStep("call");
+    openStep("call");
     setBusy(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function beginHire() {
@@ -255,9 +299,8 @@ export function ClientApp() {
       () => createCaseRecord(selectedAttorney.id, selectedCategory.id)
     );
     setCaseRecord(created);
-    setStep("hire");
+    openStep("hire");
     setBusy(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function signAgreement() {
@@ -274,7 +317,7 @@ export function ClientApp() {
     setAgreement(signed);
 
     if (requiresRetainer(caseRecord.feeModel)) {
-      setStep("payment");
+      openStep("payment");
     } else {
       const noRetainerPayment = await postJson<Payment>(
         "/api/payments",
@@ -282,10 +325,9 @@ export function ClientApp() {
         () => createPayment(caseRecord, "not_required")
       );
       setPayment(noRetainerPayment);
-      setStep("pending");
+      openStep("pending");
     }
     setBusy(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function payRetainer() {
@@ -301,9 +343,8 @@ export function ClientApp() {
       () => createPayment(caseRecord, "succeeded")
     );
     setPayment(processed);
-    setStep("pending");
+    openStep("pending");
     setBusy(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function acceptEngagementNow() {
@@ -328,9 +369,8 @@ export function ClientApp() {
     setCaseRecord(accepted.caseRecord);
     setAgreement(accepted.agreement);
     setCasePacket(accepted.packet);
-    setStep("confirmed");
+    openStep("confirmed");
     setBusy(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
@@ -340,7 +380,7 @@ export function ClientApp() {
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
             <button
               className="flex items-center gap-3 text-left"
-              onClick={() => setStep("home")}
+              onClick={() => openStep("home")}
               aria-label="Go to Lawyer On Demand home"
             >
               <span className="grid h-12 w-12 place-items-center rounded-[8px] bg-ink text-white shadow-panel">
@@ -349,23 +389,29 @@ export function ClientApp() {
               <span>
                 <span className="block text-lg font-black leading-tight sm:text-2xl">Lawyer On Demand</span>
                 <span className="block text-xs font-bold text-graphite sm:text-sm">
-                  Available attorney in 3 clicks
+                  An available attorney in 3 clicks.
                 </span>
               </span>
             </button>
-            <nav className="flex items-center gap-2">
-              <a
+            <nav className="flex max-w-[52vw] items-center gap-2 overflow-x-auto sm:max-w-none">
+              <button
                 className="hidden rounded-[8px] border border-slate-200 bg-white px-4 py-3 text-sm font-black text-ink shadow-sm transition hover:border-cobalt hover:text-cobalt sm:inline-flex"
-                href={appPath("/attorney")}
+                onClick={() => openStep("attorney-dashboard")}
               >
-                Attorney Login
-              </a>
-              <a
+                Attorney
+              </button>
+              <button
+                className="hidden rounded-[8px] border border-slate-200 bg-white px-4 py-3 text-sm font-black text-ink shadow-sm transition hover:border-cobalt hover:text-cobalt sm:inline-flex"
+                onClick={() => openStep("integrations")}
+              >
+                Integrations
+              </button>
+              <button
                 className="rounded-[8px] bg-ink px-4 py-3 text-sm font-black text-white shadow-panel transition hover:bg-slate-800"
-                href={appPath("/admin")}
+                onClick={() => openStep("admin-dashboard")}
               >
                 Admin
-              </a>
+              </button>
             </nav>
           </div>
         </header>
@@ -380,39 +426,45 @@ export function ClientApp() {
                 </Badge>
                 <div className="space-y-4">
                   <h1 className="max-w-3xl text-5xl font-black leading-[0.96] text-ink sm:text-6xl lg:text-7xl">
-                    Connect with an available attorney in 3 clicks.
+                    An available attorney in 3 clicks.
                   </h1>
                   <p className="max-w-2xl text-lg font-bold leading-8 text-graphite sm:text-xl">
-                    Open app, choose the issue, tap the attorney photo. Your preliminary guidance call starts
-                    immediately.
+                    Start the app, choose the legal issue, then tap the attorney initials to open a preliminary
+                    guidance call.
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Button
                     size="lg"
                     icon={<Siren className="h-5 w-5" />}
-                    onClick={() => document.getElementById("categories")?.scrollIntoView({ behavior: "smooth" })}
+                    onClick={startLegalHelp}
+                    data-testid="start-help"
                   >
                     Get Legal Help Now
                   </Button>
-                  <a
+                  <button
                     className="inline-flex min-h-14 items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-6 text-lg font-black text-ink shadow-sm transition hover:border-cobalt hover:text-cobalt"
-                    href={appPath("/attorney")}
+                    onClick={() => openStep("attorney-dashboard")}
                   >
                     <UserRoundCheck className="h-5 w-5" />
-                    Attorney Login
-                  </a>
+                    Attorney Dashboard
+                  </button>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {legalCategories.slice(0, 4).map((category) => (
-                    <button
-                      className="flex min-h-16 items-center justify-between gap-3 rounded-[8px] border border-slate-200 bg-white px-4 text-left shadow-sm transition hover:border-cobalt hover:text-cobalt"
-                      key={category.id}
-                      onClick={() => chooseCategory(category)}
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[
+                    ["1", "Pick issue"],
+                    ["2", "Tap attorney"],
+                    ["3", "Sign + hire"]
+                  ].map(([number, label]) => (
+                    <div
+                      className="flex min-h-16 items-center gap-3 rounded-[8px] border border-slate-200 bg-white px-4 shadow-sm"
+                      key={number}
                     >
-                      <span className="text-base font-black text-ink">{category.name}</span>
-                      <ChevronRight className="h-5 w-5 shrink-0 text-cobalt" />
-                    </button>
+                      <span className="grid h-9 w-9 place-items-center rounded-[8px] bg-ink text-base font-black text-white">
+                        {number}
+                      </span>
+                      <span className="text-base font-black text-ink">{label}</span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -426,20 +478,13 @@ export function ClientApp() {
                     <Badge tone="cyan">Preliminary guidance</Badge>
                   </div>
                   <div className="space-y-4">
-                    <p className="text-sm font-black uppercase text-cyan-100">Tap photo to call</p>
+                    <p className="text-sm font-black uppercase text-cyan-100">Attorney availability preview</p>
                     <div className="grid grid-cols-2 gap-3">
                       {attorneys.slice(0, 4).map((attorney) => (
                         <button
                           className="group overflow-hidden rounded-[8px] bg-white text-left shadow-panel transition hover:translate-y-[-2px]"
                           key={attorney.id}
-                          onClick={() => {
-                            const category =
-                              legalCategories.find((item) =>
-                                attorney.practiceAreas.some((area) => area.legalCategoryId === item.id)
-                              ) ?? legalCategories[0];
-                            chooseCategory(category);
-                            window.setTimeout(() => connectNow(attorney), 50);
-                          }}
+                          onClick={startLegalHelp}
                         >
                           <AttorneyIdentityArt attorney={attorney} actionLabel="" compact className="rounded-b-none" />
                           <span className="block p-3">
@@ -457,23 +502,51 @@ export function ClientApp() {
                 </div>
               </div>
             </section>
+          </>
+        )}
 
-            <section id="categories" className="space-y-4 pb-12">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-sm font-black uppercase text-cobalt">Choose legal issue</p>
-                  <h2 className="text-3xl font-black text-ink sm:text-5xl">Large emergency buttons.</h2>
-                </div>
-                <p className="max-w-xl text-base font-bold leading-7 text-graphite">
-                  No queue screen. No directory maze. Available attorneys appear instantly after the issue is selected.
+        {step === "categories" && (
+          <section className="grid gap-6 py-6 lg:grid-cols-[0.78fr_1.22fr]">
+            <div className="space-y-5">
+              <Button variant="ghost" icon={<ArrowLeft className="h-5 w-5" />} onClick={() => openStep("home")}>
+                Back
+              </Button>
+              <div>
+                <Badge tone="red">Click 1 of 3</Badge>
+                <h1 className="mt-4 text-4xl font-black leading-[0.98] text-ink sm:text-6xl">
+                  What kind of legal help do you need?
+                </h1>
+                <p className="mt-4 text-lg font-bold leading-8 text-graphite">
+                  Pick a category. The app instantly filters to attorneys who are online, approved, and configured for
+                  that matter type.
                 </p>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {legalCategories.map((category) => (
+              <Panel className="overflow-hidden">
+                {[
+                  ["DUI, traffic stop, traffic infraction, criminal defence", "Retainer agreement + payment"],
+                  ["Auto accident, personal injury", "Contingency agreement + no upfront retainer"],
+                  ["Other categories", "Custom attorney review before engagement"]
+                ].map(([label, value]) => (
+                  <div className="flex items-start gap-3 border-b border-slate-200 p-4 last:border-b-0" key={label}>
+                    <Check className="mt-1 h-5 w-5 shrink-0 text-verdict" />
+                    <div>
+                      <p className="text-sm font-black text-ink">{label}</p>
+                      <p className="mt-1 text-sm font-bold leading-6 text-graphite">{value}</p>
+                    </div>
+                  </div>
+                ))}
+              </Panel>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {legalCategories.map((category) => {
+                const count = getAvailableAttorneys(category.id).length;
+                return (
                   <button
-                    className="group min-h-36 rounded-[8px] border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:translate-y-[-2px] hover:border-cobalt hover:shadow-legal-glow"
+                    className="group min-h-40 rounded-[8px] border border-slate-200 bg-white p-5 text-left shadow-panel transition hover:translate-y-[-2px] hover:border-cobalt hover:shadow-legal-glow"
                     key={category.id}
                     onClick={() => chooseCategory(category)}
+                    data-testid={`category-${category.slug}`}
                   >
                     <span className="flex items-center justify-between gap-4">
                       <span className="grid h-12 w-12 place-items-center rounded-[8px] bg-ink text-white">
@@ -481,26 +554,30 @@ export function ClientApp() {
                       </span>
                       <ChevronRight className="h-6 w-6 text-cobalt transition group-hover:translate-x-1" />
                     </span>
-                    <span className="mt-5 block text-2xl font-black text-ink">{category.name}</span>
+                    <span className="mt-5 block text-2xl font-black leading-tight text-ink">{category.name}</span>
                     <span className="mt-2 block text-sm font-bold leading-6 text-graphite">{category.urgency}</span>
+                    <span className="mt-4 flex flex-wrap gap-2">
+                      <Badge tone={feeTone(category)}>{categoryFlowLabel(category)}</Badge>
+                      <Badge tone="green">{count} online</Badge>
+                    </span>
                   </button>
-                ))}
-              </div>
-            </section>
-          </>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {step === "results" && selectedCategory && (
           <section className="grid gap-6 py-6 lg:grid-cols-[0.75fr_1.25fr]">
             <div className="space-y-4">
-              <Button variant="ghost" icon={<ArrowLeft className="h-5 w-5" />} onClick={() => setStep("home")}>
+              <Button variant="ghost" icon={<ArrowLeft className="h-5 w-5" />} onClick={() => openStep("categories")}>
                 Change issue
               </Button>
               <div>
-                <Badge tone="green">Online attorneys available now</Badge>
+                <Badge tone="green">Click 2 of 3</Badge>
                 <h1 className="mt-4 text-4xl font-black text-ink sm:text-6xl">{selectedCategory.name}</h1>
                 <p className="mt-3 text-lg font-bold leading-8 text-graphite">
-                  Tap an attorney photo to begin the video call. Attorney cards stay brief so you can move fast.
+                  Available attorneys appear instantly. Tap the attorney initials panel to open the mock video room.
                 </p>
               </div>
               <Panel className="p-5">
@@ -515,53 +592,67 @@ export function ClientApp() {
             </div>
 
             <div className="grid gap-4">
-              {availableAttorneys.map((attorney) => (
-                <article
-                  className="grid gap-4 rounded-[8px] border border-slate-200 bg-white p-4 shadow-panel sm:grid-cols-[180px_1fr]"
-                  key={attorney.id}
-                >
-                  <button
-                    className="group relative min-h-60 overflow-hidden rounded-[8px] bg-slate-100 sm:min-h-full"
-                    onClick={() => connectNow(attorney)}
-                    disabled={busy}
-                    aria-label={`Start video call with ${attorney.name}`}
+              {availableAttorneys.length === 0 && (
+                <Panel className="p-5">
+                  <h2 className="text-2xl font-black text-ink">No attorney is online for this category right now.</h2>
+                  <p className="mt-2 text-sm font-bold leading-6 text-graphite">
+                    Choose another category or open the Integration Suite placeholder to see routing fallbacks.
+                  </p>
+                </Panel>
+              )}
+              {availableAttorneys.map((attorney) => {
+                const area = getPracticeArea(attorney, selectedCategory.id);
+                return (
+                  <article
+                    className="grid gap-4 rounded-[8px] border border-slate-200 bg-white p-4 shadow-panel sm:grid-cols-[190px_1fr]"
+                    key={attorney.id}
                   >
-                    <AttorneyIdentityArt attorney={attorney} />
-                  </button>
-                  <div className="flex flex-col justify-between gap-4">
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge tone="green">Online</Badge>
-                        <Badge tone={requiresRetainer(getPracticeArea(attorney, selectedCategory.id).feeModel) ? "gold" : "cyan"}>
-                          {feeLabel(attorney, selectedCategory)}
-                        </Badge>
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-black text-ink">{attorney.name}</h2>
-                        <p className="text-base font-black text-cobalt">{attorney.firmName}</p>
-                      </div>
-                      <p className="text-sm font-bold leading-6 text-graphite">{attorney.shortBio}</p>
-                      <div className="grid gap-2 text-sm font-bold text-graphite sm:grid-cols-2">
-                        <span className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-cobalt" />
-                          {attorney.jurisdictions.join(", ")}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <BadgeCheck className="h-4 w-4 text-verdict" />
-                          {attorney.yearsExperience} years experience
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="secondary"
-                      icon={<ReceiptText className="h-5 w-5" />}
-                      onClick={() => setBioAttorney(attorney)}
+                    <button
+                      className="group relative min-h-60 overflow-hidden rounded-[8px] bg-slate-100 sm:min-h-full"
+                      onClick={() => connectNow(attorney)}
+                      disabled={busy}
+                      aria-label={`Start video call with ${attorney.name}`}
+                      data-testid={`call-${attorney.id}`}
                     >
-                      Full Bio
-                    </Button>
-                  </div>
-                </article>
-              ))}
+                      <AttorneyIdentityArt attorney={attorney} />
+                    </button>
+                    <div className="flex flex-col justify-between gap-4">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge tone="green">{attorney.availabilityStatus}</Badge>
+                          <Badge tone={requiresRetainer(area.feeModel) ? "gold" : "cyan"}>{feeLabel(attorney, selectedCategory)}</Badge>
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-black text-ink">{attorney.name}</h2>
+                          <p className="text-base font-black text-cobalt">{attorney.firmName}</p>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <CardFact label="Specialty" value={selectedCategory.name} />
+                          <CardFact label="Fee Type" value={area.feeModel === "retainer" ? "Retainer" : area.feeModel === "contingency" ? "Contingency / no upfront retainer" : "Custom review"} />
+                        </div>
+                        <p className="text-sm font-bold leading-6 text-graphite">{attorney.shortBio}</p>
+                        <div className="grid gap-2 text-sm font-bold text-graphite sm:grid-cols-2">
+                          <span className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-cobalt" />
+                            {attorney.jurisdictions.join(", ")}
+                          </span>
+                          <span className="flex items-center gap-2">
+                            <BadgeCheck className="h-4 w-4 text-verdict" />
+                            {attorney.yearsExperience} years experience
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        icon={<ReceiptText className="h-5 w-5" />}
+                        onClick={() => setBioAttorney(attorney)}
+                      >
+                        Full Bio
+                      </Button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </section>
         )}
@@ -606,7 +697,8 @@ export function ClientApp() {
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="mt-1 h-6 w-6 text-verdict" />
                   <div>
-                    <h2 className="text-2xl font-black text-ink">Preliminary guidance only.</h2>
+                    <p className="text-xs font-black uppercase text-cobalt">Disclaimer</p>
+                    <h2 className="mt-1 text-2xl font-black text-ink">Preliminary guidance only.</h2>
                     <p className="mt-2 text-sm font-bold leading-6 text-graphite">
                       Full representation begins after signing, payment if required, and attorney acceptance.
                     </p>
@@ -636,19 +728,27 @@ export function ClientApp() {
                   icon={<BriefcaseBusiness className="h-5 w-5" />}
                   onClick={beginHire}
                   disabled={busy}
+                  data-testid="hire-now"
                 >
                   Hire Me Now
                 </Button>
                 <Button
                   size="lg"
+                  variant="danger"
+                  icon={<X className="h-5 w-5" />}
+                  onClick={() => openStep("post-call")}
+                  data-testid="end-call"
+                >
+                  End Call
+                </Button>
+                <Button
+                  size="lg"
                   variant="secondary"
                   icon={<ArrowLeft className="h-5 w-5" />}
-                  onClick={() => setStep("results")}
+                  onClick={() => openStep("results")}
+                  data-testid="choose-another"
                 >
-                  Return to Attorneys
-                </Button>
-                <Button size="lg" variant="danger" icon={<X className="h-5 w-5" />} onClick={() => setStep("post-call")}>
-                  End Call
+                  Choose Another Attorney
                 </Button>
               </div>
             </div>
@@ -660,13 +760,13 @@ export function ClientApp() {
             <Badge tone="dark">Call ended</Badge>
             <h1 className="text-4xl font-black text-ink sm:text-6xl">What would you like to do next?</h1>
             <div className="grid gap-3">
-              <Button size="lg" icon={<BriefcaseBusiness className="h-5 w-5" />} onClick={beginHire}>
+              <Button size="lg" icon={<BriefcaseBusiness className="h-5 w-5" />} onClick={beginHire} data-testid="hire-after-call">
                 Hire This Attorney
               </Button>
-              <Button size="lg" variant="secondary" icon={<ArrowLeft className="h-5 w-5" />} onClick={() => setStep("results")}>
+              <Button size="lg" variant="secondary" icon={<ArrowLeft className="h-5 w-5" />} onClick={() => openStep("results")}>
                 Choose Another Attorney
               </Button>
-              <Button size="lg" variant="ghost" icon={<X className="h-5 w-5" />} onClick={() => setStep("home")}>
+              <Button size="lg" variant="ghost" icon={<X className="h-5 w-5" />} onClick={() => openStep("home")}>
                 End Session
               </Button>
             </div>
@@ -711,7 +811,12 @@ export function ClientApp() {
                     </div>
                   ))}
                 </div>
-                <Button size="lg" icon={<FileSignature className="h-5 w-5" />} onClick={() => setStep("signature")}>
+                <Button
+                  size="lg"
+                  icon={<FileSignature className="h-5 w-5" />}
+                  onClick={() => openStep("signature")}
+                  data-testid="review-sign"
+                >
                   Review and Sign
                 </Button>
               </div>
@@ -742,6 +847,7 @@ export function ClientApp() {
                     type="checkbox"
                     checked={consent}
                     onChange={(event) => setConsent(event.target.checked)}
+                    data-testid="signature-consent"
                   />
                   I agree to sign electronically and understand that attorney acceptance is required before formal
                   representation begins.
@@ -753,6 +859,7 @@ export function ClientApp() {
                     value={typedSignature}
                     onChange={(event) => setTypedSignature(event.target.value)}
                     placeholder={demoClient.name}
+                    data-testid="typed-signature"
                   />
                 </label>
                 <Button
@@ -760,6 +867,7 @@ export function ClientApp() {
                   icon={<FileSignature className="h-5 w-5" />}
                   onClick={signAgreement}
                   disabled={!typedSignature.trim() || !consent || busy}
+                  data-testid="sign-agreement"
                 >
                   Sign Agreement
                 </Button>
@@ -790,6 +898,7 @@ export function ClientApp() {
                 icon={<CircleDollarSign className="h-5 w-5" />}
                 onClick={payRetainer}
                 disabled={busy}
+                data-testid="pay-retainer"
               >
                 Pay Retainer
               </Button>
@@ -819,6 +928,7 @@ export function ClientApp() {
                 icon={<UserRoundCheck className="h-5 w-5" />}
                 onClick={acceptEngagementNow}
                 disabled={busy}
+                data-testid="accept-engagement"
               >
                 Demo Attorney Accepts Engagement
               </Button>
@@ -830,9 +940,10 @@ export function ClientApp() {
           <section className="mx-auto grid max-w-5xl gap-5 py-8 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <Badge tone="green">Agreement executed</Badge>
-              <h1 className="mt-4 text-4xl font-black text-ink sm:text-6xl">Attorney retained.</h1>
+              <h1 className="mt-4 text-4xl font-black text-ink sm:text-6xl">Case created. Attorney retained.</h1>
               <p className="mt-4 text-lg font-bold leading-8 text-graphite">
                 Representation has begun because signature, required payment logic, and attorney acceptance are complete.
+                The new case packet is ready for the attorney dashboard, admin dashboard, and integrations.
               </p>
             </div>
             <Panel className="p-5">
@@ -869,7 +980,141 @@ export function ClientApp() {
                   PDF Packet
                 </a>
               </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <Button variant="secondary" icon={<UserRoundCheck className="h-5 w-5" />} onClick={() => openStep("attorney-dashboard")}>
+                  Attorney Dashboard
+                </Button>
+                <Button variant="secondary" icon={<MonitorCheck className="h-5 w-5" />} onClick={() => openStep("admin-dashboard")}>
+                  Admin Dashboard
+                </Button>
+                <Button icon={<PlugZap className="h-5 w-5" />} onClick={() => openStep("integrations")}>
+                  Integration Suite
+                </Button>
+              </div>
             </Panel>
+          </section>
+        )}
+
+        {step === "attorney-dashboard" && (
+          <section className="grid gap-5 py-6 lg:grid-cols-[0.8fr_1.2fr]">
+            <div className="space-y-5">
+              <Badge tone="dark">Attorney dashboard placeholder</Badge>
+              <h1 className="text-4xl font-black leading-tight text-ink sm:text-6xl">
+                Calls, agreements, acceptance, and exports.
+              </h1>
+              <p className="text-lg font-bold leading-8 text-graphite">
+                This placeholder shows the attorney side of the MVP: availability, incoming calls, signed agreements,
+                retainer status, and the final accept-engagement control.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <DashboardMetric label="Availability" value="Online" icon={<Video className="h-6 w-6" />} />
+                <DashboardMetric label="Pending accepts" value="3" icon={<FileSignature className="h-6 w-6" />} />
+              </div>
+              <a
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-ink px-5 font-black text-white shadow-panel"
+                href={appPath("/attorney")}
+              >
+                Open full attorney page
+                <ChevronRight className="h-5 w-5" />
+              </a>
+            </div>
+            <Panel className="overflow-hidden">
+              <div className="border-b border-slate-200 bg-slate-50 p-5">
+                <p className="text-sm font-black uppercase text-cobalt">Incoming engagement</p>
+                <h2 className="mt-2 text-3xl font-black text-ink">
+                  {caseRecord && selectedAttorney ? `${demoClient.name} wants to hire ${selectedAttorney.name}` : "New signed agreement ready"}
+                </h2>
+              </div>
+              <div className="grid gap-3 p-5">
+                <StatusLine label="Preliminary call completed" active />
+                <StatusLine label="Client signature captured" active={Boolean(agreement?.signedByClient)} />
+                <StatusLine
+                  label={
+                    caseRecord && requiresRetainer(caseRecord.feeModel)
+                      ? "Retainer payment confirmed"
+                      : "No upfront retainer required"
+                  }
+                  active={Boolean(payment?.status === "succeeded" || payment?.status === "not_required")}
+                />
+                <StatusLine label="Attorney acceptance control" active={Boolean(agreement?.attorneyAccepted)} />
+              </div>
+            </Panel>
+          </section>
+        )}
+
+        {step === "admin-dashboard" && (
+          <section className="space-y-5 py-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <Badge tone="dark">Admin dashboard placeholder</Badge>
+                <h1 className="mt-4 text-4xl font-black leading-tight text-ink sm:text-6xl">
+                  Platform command center.
+                </h1>
+                <p className="mt-3 max-w-3xl text-lg font-bold leading-8 text-graphite">
+                  Approvals, categories, cases, agreements, payments, subscription status, and integration health all
+                  live here.
+                </p>
+              </div>
+              <a
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-ink px-5 font-black text-white shadow-panel"
+                href={appPath("/admin")}
+              >
+                Open full admin page
+                <ChevronRight className="h-5 w-5" />
+              </a>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <DashboardMetric label="Online attorneys" value="8" icon={<UserRoundCheck className="h-6 w-6" />} />
+              <DashboardMetric label="Live calls" value="14" icon={<Video className="h-6 w-6" />} />
+              <DashboardMetric label="Signed agreements" value="42" icon={<FileSignature className="h-6 w-6" />} />
+              <DashboardMetric label="Exports queued" value="9" icon={<CloudUpload className="h-6 w-6" />} />
+            </div>
+            <Panel className="overflow-hidden">
+              <div className="grid min-w-full gap-0 sm:grid-cols-4">
+                {["Attorney approvals", "Category routing", "Payment events", "Case audit log"].map((item) => (
+                  <div className="border-b border-slate-200 p-5 sm:border-b-0 sm:border-r sm:last:border-r-0" key={item}>
+                    <p className="text-lg font-black text-ink">{item}</p>
+                    <p className="mt-2 text-sm font-bold leading-6 text-graphite">Placeholder table module</p>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </section>
+        )}
+
+        {step === "integrations" && (
+          <section className="grid gap-5 py-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="space-y-5">
+              <Badge tone="cyan">Integration Suite placeholder</Badge>
+              <h1 className="text-4xl font-black leading-tight text-ink sm:text-6xl">
+                Push the case packet into the attorney&apos;s real workflow.
+              </h1>
+              <p className="text-lg font-bold leading-8 text-graphite">
+                The MVP exposes placeholders for practice-management exports, webhooks, PDF packet generation, email
+                fallback, and structured JSON delivery.
+              </p>
+              <Panel className="p-5">
+                <div className="flex items-start gap-3">
+                  <DatabaseZap className="mt-1 h-6 w-6 text-cobalt" />
+                  <p className="text-sm font-bold leading-6 text-graphite">
+                    After attorney acceptance, the app can package client info, category, agreement, payment state,
+                    call notes, and next steps for downstream systems.
+                  </p>
+                </div>
+              </Panel>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                ["Clio / MyCase / Filevine", "Practice-management connector placeholders"],
+                ["PDF Case Packet", "Downloadable packet with agreement and status"],
+                ["JSON Payload", "Structured export for custom automation"],
+                ["Webhook Events", "case.created, agreement.signed, payment.succeeded"],
+                ["Email Fallback", "Secure packet handoff placeholder"],
+                ["Zapier / Make", "No-code routing placeholder"]
+              ].map(([title, body]) => (
+                <PlaceholderCard key={title} title={title} body={body} />
+              ))}
+            </div>
           </section>
         )}
       </div>
@@ -892,7 +1137,7 @@ export function ClientApp() {
                 <AttorneyIdentityArt attorney={bioAttorney} actionLabel="" className="absolute inset-0 rounded-none" />
                 <span className="absolute inset-x-4 bottom-4 flex min-h-14 items-center justify-center gap-2 rounded-[8px] bg-white/95 px-4 text-lg font-black text-ink shadow-panel">
                   <Video className="h-5 w-5 text-cobalt" />
-                  Tap photo to call
+                  Tap initials to call
                 </span>
               </button>
               <div className="space-y-4">
@@ -929,6 +1174,39 @@ function StatusLine({ label, active }: { label: string; active: boolean }) {
         {active ? <Check className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}
       </span>
       <span className="text-sm font-black text-ink">{label}</span>
+    </div>
+  );
+}
+
+function CardFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[8px] bg-slate-50 p-3">
+      <p className="text-[11px] font-black uppercase text-cobalt">{label}</p>
+      <p className="mt-1 text-sm font-black leading-5 text-ink">{value}</p>
+    </div>
+  );
+}
+
+function DashboardMetric({ label, value, icon }: { label: string; value: string; icon: ReactNode }) {
+  return (
+    <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-3 text-cobalt">
+        {icon}
+        <span className="text-3xl font-black text-ink">{value}</span>
+      </div>
+      <p className="mt-4 text-sm font-black uppercase text-graphite">{label}</p>
+    </div>
+  );
+}
+
+function PlaceholderCard({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-panel">
+      <div className="grid h-12 w-12 place-items-center rounded-[8px] bg-[linear-gradient(135deg,#155dfc,#02c7ee)] text-white">
+        <PlugZap className="h-6 w-6" />
+      </div>
+      <h2 className="mt-5 text-2xl font-black leading-tight text-ink">{title}</h2>
+      <p className="mt-2 text-sm font-bold leading-6 text-graphite">{body}</p>
     </div>
   );
 }

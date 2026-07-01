@@ -307,6 +307,94 @@ export const attorneys: Attorney[] = [
         preliminaryGuidanceMinutes: 8
       }
     ]
+  },
+  {
+    id: "atty_nadia",
+    userId: "user_nadia",
+    name: "Nadia Brooks",
+    email: "nadia@brooksfamily.example",
+    phone: "+1 555 0206",
+    firmName: "Brooks Family Counsel",
+    barLicenseNumber: "WA-771509",
+    licenseStatus: "approved",
+    profilePhotoUrl: "",
+    shortBio: "Family law attorney for custody questions, divorce triage, and urgent protective-order next steps.",
+    fullBio:
+      "Nadia Brooks handles family law matters including custody, parenting plans, divorce filings, and protective orders. Her preliminary guidance calls focus on immediate safety, deadlines, documents, and whether a limited-scope or full-scope engagement is appropriate.",
+    yearsExperience: 13,
+    languages: ["English"],
+    jurisdictions: ["Washington", "Oregon"],
+    officeAddress: "701 5th Ave, Seattle, WA",
+    serviceZipCodes: ["98101", "98104", "98109", "97204"],
+    availabilityStatus: "online",
+    rating: 4.8,
+    subscriptionStatus: "active",
+    premiumListingLevel: "premium",
+    integrationPreference: "practicepanther",
+    practiceAreas: [
+      {
+        legalCategoryId: "cat_family",
+        feeModel: "custom",
+        retainerRequired: false,
+        retainerAmount: null,
+        contingencyPercentage: null,
+        preliminaryGuidanceMinutes: 6,
+        customFeeText: "Custom fee terms after attorney review"
+      },
+      {
+        legalCategoryId: "cat_other",
+        feeModel: "custom",
+        retainerRequired: false,
+        retainerAmount: null,
+        contingencyPercentage: null,
+        preliminaryGuidanceMinutes: 5,
+        customFeeText: "Triage review before fee terms"
+      }
+    ]
+  },
+  {
+    id: "atty_omar",
+    userId: "user_omar",
+    name: "Omar Patel",
+    email: "omar@patelcontracts.example",
+    phone: "+1 555 0207",
+    firmName: "Patel Contract Studio",
+    barLicenseNumber: "CO-418220",
+    licenseStatus: "approved",
+    profilePhotoUrl: "",
+    shortBio: "Contract attorney for urgent review, breach questions, negotiation strategy, and business documents.",
+    fullBio:
+      "Omar Patel advises clients on contract review, breach-of-contract questions, vendor disputes, service agreements, and negotiation strategy. His preliminary guidance calls identify key deadlines, risk points, and the right engagement structure before formal representation begins.",
+    yearsExperience: 10,
+    languages: ["English", "Hindi"],
+    jurisdictions: ["Colorado", "Arizona"],
+    officeAddress: "1801 California St, Denver, CO",
+    serviceZipCodes: ["80202", "80203", "85004", "85012"],
+    availabilityStatus: "online",
+    rating: 4.7,
+    subscriptionStatus: "active",
+    premiumListingLevel: "basic",
+    integrationPreference: "make",
+    practiceAreas: [
+      {
+        legalCategoryId: "cat_contract",
+        feeModel: "custom",
+        retainerRequired: false,
+        retainerAmount: null,
+        contingencyPercentage: null,
+        preliminaryGuidanceMinutes: 6,
+        customFeeText: "Scope and fee quote after document review"
+      },
+      {
+        legalCategoryId: "cat_other",
+        feeModel: "custom",
+        retainerRequired: false,
+        retainerAmount: null,
+        contingencyPercentage: null,
+        preliminaryGuidanceMinutes: 5,
+        customFeeText: "Triage review before fee terms"
+      }
+    ]
   }
 ];
 
