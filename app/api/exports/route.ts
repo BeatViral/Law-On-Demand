@@ -3,6 +3,8 @@ import { demoClient, attorneys, legalCategories } from "@/lib/data";
 import type { Agreement, CaseRecord, Payment } from "@/lib/types";
 import { createAgreement, createCasePacket, createCaseRecord, createPayment } from "@/lib/workflows";
 
+const isStaticExport = process.env.STATIC_EXPORT === "true";
+
 function escapePdfText(text: string) {
   return text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
@@ -35,13 +37,13 @@ function buildSimplePdf(lines: string[]) {
 }
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const format = url.searchParams.get("format") ?? "json";
+  const url = isStaticExport ? null : new URL(request.url);
+  const format = url?.searchParams.get("format") ?? "json";
   const attorney = attorneys[0];
   const category = legalCategories[0];
   const caseRecord: CaseRecord = {
     ...createCaseRecord(attorney.id, category.id),
-    id: url.searchParams.get("caseId") ?? "case_demo_export",
+    id: url?.searchParams.get("caseId") ?? "case_demo_export",
     status: "represented",
     attorneyAcceptanceStatus: "accepted"
   };

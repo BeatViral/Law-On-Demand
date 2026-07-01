@@ -20,6 +20,7 @@ import {
   Video
 } from "lucide-react";
 import { attorneys, demoClient, legalCategories } from "@/lib/data";
+import { appPath } from "@/lib/routing";
 import { getPracticeArea } from "@/lib/workflows";
 import type { AvailabilityStatus, IntegrationType } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -75,7 +76,7 @@ export function AttorneyDashboard() {
               <p className="font-bold text-graphite">{attorney.firmName}</p>
             </div>
           </div>
-          <a className="font-black text-cobalt" href="/">
+          <a className="font-black text-cobalt" href={appPath("/")}>
             Client app
           </a>
         </header>

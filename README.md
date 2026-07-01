@@ -29,6 +29,18 @@ Core promise: open app, choose legal issue, tap attorney photo, video call begin
 - Attorney dashboard: `/attorney`
 - Admin dashboard: `/admin`
 
+## GitHub Pages
+
+The repository includes a GitHub Actions workflow at `.github/workflows/deploy-pages.yml`.
+
+On every push to `main`, the workflow builds a static export for:
+
+```text
+https://beatviral.github.io/Law-On-Demand/
+```
+
+GitHub Pages cannot run Next.js API routes, so the deployed Pages version uses client-side demo workflow logic for video room creation, case creation, e-signature, payment status, attorney acceptance, and packet downloads. The `/api/*` routes remain in the repo for Node/Vercel-style deployments.
+
 ## Local setup
 
 ```bash

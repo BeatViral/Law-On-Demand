@@ -11,6 +11,7 @@ import {
   Video
 } from "lucide-react";
 import { adminStats, attorneys, demoClient, legalCategories } from "@/lib/data";
+import { appPath } from "@/lib/routing";
 import { Badge } from "./ui/badge";
 import { Panel } from "./ui/panel";
 
@@ -37,7 +38,7 @@ export function AdminDashboard() {
               Clean tables for approvals, users, cases, payments, subscriptions, and integrations.
             </p>
           </div>
-          <a className="font-black text-cobalt" href="/">
+          <a className="font-black text-cobalt" href={appPath("/")}>
             Client app
           </a>
         </header>

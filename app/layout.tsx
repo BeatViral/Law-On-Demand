@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const metadataBasePath = process.env.GITHUB_PAGES === "true" ? "/Law-On-Demand" : "";
+
 export const metadata: Metadata = {
   title: "Lawyer On Demand",
   description: "Connect with an available attorney in 3 clicks.",
   applicationName: "Lawyer On Demand",
-  manifest: "/manifest.webmanifest",
+  manifest: `${metadataBasePath}/manifest.webmanifest`,
   appleWebApp: {
     capable: true,
     title: "Lawyer On Demand",

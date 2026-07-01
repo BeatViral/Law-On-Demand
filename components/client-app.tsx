@@ -24,7 +24,16 @@ import {
   X
 } from "lucide-react";
 import { attorneys, demoClient, getAvailableAttorneys, legalCategories } from "@/lib/data";
-import { getPracticeArea, requiresRetainer } from "@/lib/workflows";
+import { appPath, isStaticDemo } from "@/lib/routing";
+import {
+  acceptEngagement,
+  createAgreement,
+  createCasePacket,
+  createCaseRecord,
+  createPayment,
+  getPracticeArea,
+  requiresRetainer
+} from "@/lib/workflows";
 import type { Agreement, Attorney, CasePacket, CaseRecord, LegalCategory, Payment, VideoCall } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "./ui/badge";
@@ -64,6 +73,23 @@ function feeLabel(attorney: Attorney, category: LegalCategory) {
   return area.customFeeText ?? "Custom fee terms";
 }
 
+async function postJson<T>(path: string, body: unknown, fallback: () => T): Promise<T> {
+  if (isStaticDemo) return fallback();
+
+  try {
+    const response = await fetch(appPath(path), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    return (await response.json()) as T;
+  } catch {
+    return fallback();
+  }
+}
+
 export function ClientApp() {
   const [step, setStep] = useState<Step>("home");
   const [selectedCategory, setSelectedCategory] = useState<LegalCategory | null>(null);
@@ -88,6 +114,32 @@ export function ClientApp() {
   const selectedPracticeArea =
     selectedAttorney && selectedCategory ? getPracticeArea(selectedAttorney, selectedCategory.id) : null;
 
+  const packetJsonHref = useMemo(() => {
+    if (!casePacket || !caseRecord) return "#";
+    if (!isStaticDemo) return appPath(`/api/exports?caseId=${caseRecord.id}&format=json`);
+    return `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(casePacket, null, 2))}`;
+  }, [casePacket, caseRecord]);
+
+  const packetPdfHref = useMemo(() => {
+    if (!casePacket || !caseRecord) return "#";
+    if (!isStaticDemo) return appPath(`/api/exports?caseId=${caseRecord.id}&format=pdf`);
+
+    const packetText = [
+      "Lawyer On Demand Case Packet",
+      `Reference: ${casePacket.reference}`,
+      `Client: ${casePacket.client.name}`,
+      `Attorney: ${casePacket.attorney.name}`,
+      `Matter: ${casePacket.matter.category}`,
+      `Fee model: ${casePacket.matter.feeModel}`,
+      `Agreement fully executed: ${casePacket.agreement.fullyExecuted}`,
+      `Payment status: ${casePacket.payment.status}`,
+      "Recording placeholder: enable only with compliant consent.",
+      ...casePacket.nextSteps.map((step) => `Next step: ${step}`)
+    ].join("\n");
+
+    return `data:text/plain;charset=utf-8,${encodeURIComponent(packetText)}`;
+  }, [casePacket, caseRecord]);
+
   useEffect(() => {
     if (step !== "call") return;
     const timer = window.setInterval(() => setElapsed((value) => value + 1), 1000);
@@ -107,17 +159,26 @@ export function ClientApp() {
     setBusy(true);
     setSelectedAttorney(attorney);
 
-    const response = await fetch("/api/video-room", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const call = await postJson<VideoCall>(
+      "/api/video-room",
+      {
         attorneyId: attorney.id,
         legalCategoryId: selectedCategory.id,
         clientId: demoClient.id
+      },
+      () => ({
+        id: `call_${Date.now()}`,
+        clientId: demoClient.id,
+        attorneyId: attorney.id,
+        legalCategoryId: selectedCategory.id,
+        status: "active",
+        videoRoomId: `lod-${selectedCategory.slug}-demo`,
+        videoRoomUrl: "#",
+        startedAt: new Date().toISOString(),
+        preliminaryGuidanceSeconds: 0,
+        recordingUrl: "Recording placeholder: enable after consent and jurisdiction checks."
       })
-    });
-
-    const call = (await response.json()) as VideoCall;
+    );
     setVideoCall(call);
     setElapsed(0);
     setBioAttorney(null);
@@ -129,15 +190,14 @@ export function ClientApp() {
   async function beginHire() {
     if (!selectedAttorney || !selectedCategory) return;
     setBusy(true);
-    const response = await fetch("/api/cases", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const created = await postJson<CaseRecord>(
+      "/api/cases",
+      {
         attorneyId: selectedAttorney.id,
         legalCategoryId: selectedCategory.id
-      })
-    });
-    const created = (await response.json()) as CaseRecord;
+      },
+      () => createCaseRecord(selectedAttorney.id, selectedCategory.id)
+    );
     setCaseRecord(created);
     setStep("hire");
     setBusy(false);
@@ -147,26 +207,24 @@ export function ClientApp() {
   async function signAgreement() {
     if (!caseRecord || !typedSignature.trim() || !consent) return;
     setBusy(true);
-    const response = await fetch("/api/agreements", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const signed = await postJson<Agreement>(
+      "/api/agreements",
+      {
         caseRecord,
         signature: typedSignature.trim()
-      })
-    });
-    const signed = (await response.json()) as Agreement;
+      },
+      () => createAgreement(caseRecord, typedSignature.trim())
+    );
     setAgreement(signed);
 
     if (requiresRetainer(caseRecord.feeModel)) {
       setStep("payment");
     } else {
-      const paymentResponse = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseRecord })
-      });
-      const noRetainerPayment = (await paymentResponse.json()) as Payment;
+      const noRetainerPayment = await postJson<Payment>(
+        "/api/payments",
+        { caseRecord },
+        () => createPayment(caseRecord, "not_required")
+      );
       setPayment(noRetainerPayment);
       setStep("pending");
     }
@@ -177,16 +235,15 @@ export function ClientApp() {
   async function payRetainer() {
     if (!caseRecord) return;
     setBusy(true);
-    const response = await fetch("/api/payments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const processed = await postJson<Payment>(
+      "/api/payments",
+      {
         caseRecord,
         customerId: demoClient.stripeCustomerId,
         paymentMethodId: demoClient.defaultPaymentMethodId
-      })
-    });
-    const processed = (await response.json()) as Payment;
+      },
+      () => createPayment(caseRecord, "succeeded")
+    );
     setPayment(processed);
     setStep("pending");
     setBusy(false);
@@ -196,17 +253,22 @@ export function ClientApp() {
   async function acceptEngagementNow() {
     if (!caseRecord || !agreement) return;
     setBusy(true);
-    const response = await fetch("/api/cases", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const accepted = await postJson<AcceptanceResponse>(
+      "/api/cases",
+      {
         action: "accept",
         caseRecord,
         agreement,
         payment
-      })
-    });
-    const accepted = (await response.json()) as AcceptanceResponse;
+      },
+      () => {
+        const acceptedCase = acceptEngagement(caseRecord, agreement, payment ?? undefined);
+        return {
+          ...acceptedCase,
+          packet: createCasePacket(acceptedCase.caseRecord, acceptedCase.agreement, payment ?? undefined)
+        };
+      }
+    );
     setCaseRecord(accepted.caseRecord);
     setAgreement(accepted.agreement);
     setCasePacket(accepted.packet);
@@ -238,13 +300,13 @@ export function ClientApp() {
             <nav className="flex items-center gap-2">
               <a
                 className="hidden rounded-[8px] border border-slate-200 bg-white px-4 py-3 text-sm font-black text-ink shadow-sm transition hover:border-cobalt hover:text-cobalt sm:inline-flex"
-                href="/attorney"
+                href={appPath("/attorney")}
               >
                 Attorney Login
               </a>
               <a
                 className="rounded-[8px] bg-ink px-4 py-3 text-sm font-black text-white shadow-panel transition hover:bg-slate-800"
-                href="/admin"
+                href={appPath("/admin")}
               >
                 Admin
               </a>
@@ -279,7 +341,7 @@ export function ClientApp() {
                   </Button>
                   <a
                     className="inline-flex min-h-14 items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-6 text-lg font-black text-ink shadow-sm transition hover:border-cobalt hover:text-cobalt"
-                    href="/attorney"
+                    href={appPath("/attorney")}
                   >
                     <UserRoundCheck className="h-5 w-5" />
                     Attorney Login
@@ -746,16 +808,18 @@ export function ClientApp() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <a
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] bg-ink px-4 font-black text-white"
-                  href={`/api/exports?caseId=${caseRecord.id}&format=json`}
+                  href={packetJsonHref}
                   target="_blank"
+                  download={`${casePacket.reference}.json`}
                 >
                   <Download className="h-5 w-5" />
                   JSON Packet
                 </a>
                 <a
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-4 font-black text-ink"
-                  href={`/api/exports?caseId=${caseRecord.id}&format=pdf`}
+                  href={packetPdfHref}
                   target="_blank"
+                  download={`${casePacket.reference}.${isStaticDemo ? "txt" : "pdf"}`}
                 >
                   <Download className="h-5 w-5" />
                   PDF Packet
