@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Source+Serif+4:opsz,wght@8..60,600..900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -1477,6 +1479,542 @@ img {
   font-weight: 600;
 }
 
+/* Premium app polish: stronger type, cleaner hierarchy, and more tactile mobile surfaces. */
+.lod-app-root {
+  padding-top: 34px;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(232, 163, 61, 0.18), transparent 30%),
+    linear-gradient(180deg, #f3f5f9 0%, #e5e9f1 100%);
+}
+
+.lod-meta-bar {
+  margin-bottom: 20px;
+}
+
+.lod-meta-bar .lod-eyebrow {
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.lod-meta-bar h1 {
+  font-size: 30px;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 0.95;
+}
+
+.lod-meta-bar p {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lod-mode-tabs {
+  border-radius: 16px;
+  padding: 5px;
+  box-shadow: 0 18px 45px rgba(11, 28, 61, 0.12);
+}
+
+.lod-mode-tab {
+  min-height: 38px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.lod-device {
+  background: #07142d;
+  border: 11px solid #07142d;
+  border-radius: 50px;
+  box-shadow:
+    0 42px 90px -30px rgba(11, 28, 61, 0.72),
+    0 18px 32px -24px rgba(11, 28, 61, 0.8),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.lod-device::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  border-radius: 38px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 24px 38px rgba(255, 255, 255, 0.07);
+}
+
+.lod-notch {
+  width: 154px;
+  height: 30px;
+  background: #07142d;
+  box-shadow: 0 10px 20px rgba(7, 20, 45, 0.18);
+}
+
+.lod-screen {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.lod-home-head {
+  padding: 28px 24px 10px;
+}
+
+.lod-brand-mark {
+  margin-bottom: 22px;
+}
+
+.lod-brand-glyph {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 18px;
+  box-shadow: 0 10px 22px rgba(232, 163, 61, 0.28);
+}
+
+.lod-brand-mark span,
+.lod-sidebar-brand span {
+  font-weight: 700;
+  color: #4f5b6c;
+}
+
+.lod-home-head h1 {
+  max-width: 290px;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: 0;
+  color: #07142d;
+}
+
+.lod-sub {
+  max-width: 315px;
+  margin-top: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #4e5969;
+}
+
+.lod-legend {
+  padding: 16px 24px 0;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #4f5b6c;
+}
+
+.lod-legend span {
+  flex: 1;
+  min-height: 28px;
+  padding: 7px 8px;
+  border: 1px solid rgba(11, 28, 61, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.lod-sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.lod-tile-grid {
+  padding: 14px 24px 0;
+  gap: 12px;
+}
+
+.lod-issue-tile {
+  position: relative;
+  min-height: 126px;
+  padding: 17px 15px;
+  border-radius: 18px;
+  border-width: 1px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 12px 30px -24px rgba(11, 28, 61, 0.9);
+  transform: translateZ(0);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.lod-issue-tile:hover {
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 20px 36px -24px rgba(11, 28, 61, 0.82);
+}
+
+.lod-issue-tile:focus-visible,
+.lod-photo-wrap:focus-visible,
+.lod-btn-primary:focus-visible,
+.lod-connect-btn:focus-visible,
+.lod-bio-link:focus-visible {
+  outline: 3px solid rgba(232, 163, 61, 0.45);
+  outline-offset: 3px;
+}
+
+.lod-issue-tile--retainer {
+  border-left-width: 5px;
+}
+
+.lod-issue-tile--contingency {
+  border-left-width: 5px;
+}
+
+.lod-issue-icon {
+  width: 40px;
+  height: 32px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #f5f7fb;
+  box-shadow: inset 0 0 0 1px rgba(11, 28, 61, 0.06);
+}
+
+.lod-issue-name {
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.05;
+  color: #07142d;
+}
+
+.lod-issue-count {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6d7787;
+}
+
+.lod-home-foot {
+  font-weight: 800;
+}
+
+.lod-topbar {
+  padding: 2px 24px 18px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(14px);
+}
+
+.lod-back-circle {
+  width: 38px;
+  height: 38px;
+  background: #eef1f6;
+  box-shadow: inset 0 0 0 1px rgba(11, 28, 61, 0.04);
+}
+
+.lod-topbar h2 {
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1;
+  color: #07142d;
+}
+
+.lod-step-tag {
+  margin-top: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #6f7a8b;
+}
+
+.lod-results-head {
+  padding: 16px 24px 4px;
+}
+
+.lod-status-pill {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 6px 10px 6px 8px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(232, 163, 61, 0.2);
+}
+
+.lod-attorney-list {
+  padding: 14px 24px 24px;
+  gap: 15px;
+}
+
+.lod-attorney-card {
+  border-width: 1px;
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 42px -32px rgba(11, 28, 61, 0.82);
+}
+
+.lod-attorney-card--hero {
+  border-color: rgba(232, 163, 61, 0.72);
+  box-shadow:
+    0 20px 44px -30px rgba(11, 28, 61, 0.88),
+    0 0 0 4px rgba(232, 163, 61, 0.12);
+}
+
+.lod-attorney-row {
+  gap: 14px;
+}
+
+.lod-photo-wrap {
+  border-radius: 999px;
+  transition: transform 0.18s ease;
+}
+
+.lod-photo-wrap:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.lod-photo-ring {
+  width: 76px;
+  height: 76px;
+  padding: 4px;
+  background: conic-gradient(from 0deg, #1a7a3c, #e8a33d, #f6c879, #1a7a3c);
+  box-shadow: 0 14px 30px -18px rgba(11, 28, 61, 0.95);
+}
+
+.lod-photo-inner {
+  font-size: 25px;
+  font-weight: 800;
+  color: #07142d;
+  background: linear-gradient(180deg, #ffffff 0%, #eef2f7 100%);
+}
+
+.lod-photo-badge {
+  bottom: 1px;
+  right: 0;
+  width: 21px;
+  height: 21px;
+  color: transparent;
+  background: var(--green);
+  border-width: 3px;
+  box-shadow: 0 0 0 4px rgba(26, 122, 60, 0.12);
+}
+
+.lod-photo-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.lod-attorney-name {
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.05;
+  color: #07142d;
+}
+
+.lod-attorney-firm {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lod-tags {
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.lod-tag {
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.lod-card-summary {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.58;
+}
+
+.lod-card-actions {
+  margin-top: 14px;
+}
+
+.lod-bio-link,
+.lod-connect-btn {
+  min-height: 42px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.lod-connect-btn {
+  background: #07142d;
+  box-shadow: 0 12px 24px -18px rgba(7, 20, 45, 0.9);
+}
+
+.lod-tap-note {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #5f6b7d;
+}
+
+.lod-call-stage {
+  margin: 2px 14px 14px;
+  min-height: 378px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(232, 163, 61, 0.18), transparent 28%),
+    linear-gradient(160deg, #172b54 0%, #07142d 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.lod-call-name-tag,
+.lod-guidance-timer {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(7, 20, 45, 0.68);
+}
+
+.lod-call-name {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.lod-call-cat {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lod-guidance-label,
+.lod-guidance-time {
+  font-weight: 800;
+}
+
+.lod-attorney-video-avatar {
+  width: 122px;
+  height: 122px;
+  font-size: 36px;
+  font-weight: 850;
+  box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.04);
+}
+
+.lod-self-video {
+  width: 74px;
+  height: 100px;
+  border-radius: 16px;
+  font-weight: 800;
+}
+
+.lod-call-disclaimer {
+  margin: 0 24px 14px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.lod-call-actions {
+  padding: 0 24px 24px;
+}
+
+.lod-hire-btn,
+.lod-btn-primary,
+.lod-btn-secondary {
+  min-height: 52px;
+  border-radius: 15px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.lod-hire-btn {
+  font-size: 16px;
+  box-shadow: 0 16px 28px -20px rgba(232, 163, 61, 0.9);
+}
+
+.lod-call-row-actions button {
+  min-height: 46px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+.lod-sign-summary,
+.lod-confirm-details,
+.lod-wait-card,
+.lod-packet-section {
+  border: 1px solid rgba(11, 28, 61, 0.06);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 38px -32px rgba(11, 28, 61, 0.82);
+}
+
+.lod-agreement-box {
+  border-radius: 16px;
+  background: #fff;
+  font-size: 12px;
+}
+
+.lod-sig-input {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.lod-wait-wrap h2,
+.lod-confirm-wrap h2 {
+  font-size: 27px;
+  font-weight: 900;
+  line-height: 1;
+  color: #07142d;
+}
+
+.lod-confirm-badge {
+  width: 70px;
+  height: 70px;
+  font-weight: 900;
+  box-shadow: 0 18px 34px -24px rgba(7, 20, 45, 0.92);
+}
+
+.lod-integration-card {
+  border-width: 1px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 30px -26px rgba(11, 28, 61, 0.8);
+}
+
+.lod-integration-card.is-selected {
+  border-color: rgba(232, 163, 61, 0.75);
+  background: #fff9ef;
+}
+
+.lod-integration-ic,
+.lod-int-card-ic {
+  font-weight: 900;
+  background: #eef1f6;
+}
+
+.lod-desktop {
+  border-radius: 18px;
+  box-shadow:
+    0 42px 90px -36px rgba(11, 28, 61, 0.62),
+    0 0 0 1px rgba(11, 28, 61, 0.08);
+}
+
+.lod-sidebar {
+  background: #07142d;
+}
+
+.lod-dash-header h2 {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.lod-panel-card,
+.lod-stat-card,
+.lod-int-card-d {
+  border-radius: 18px;
+  box-shadow: 0 14px 34px -30px rgba(11, 28, 61, 0.82);
+}
+
+.lod-panel-card h3 {
+  font-size: 18px;
+  font-weight: 850;
+  color: #07142d;
+}
+
+.lod-stat-value {
+  font-size: 30px;
+  font-weight: 900;
+}
+
 @media (max-width: 620px) {
   .lod-app-root {
     padding: 0;
@@ -1493,6 +2031,10 @@ img {
     border: none;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .lod-device::before {
+    display: none;
   }
 
   .lod-notch {
@@ -1530,5 +2072,31 @@ img {
   .lod-stat-grid,
   .lod-int-grid-desktop {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 360px) {
+  .lod-home-head h1 {
+    font-size: 32px;
+  }
+
+  .lod-tile-grid {
+    gap: 9px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .lod-issue-tile {
+    min-height: 118px;
+    padding: 14px 12px;
+  }
+
+  .lod-photo-ring {
+    width: 68px;
+    height: 68px;
+  }
+
+  .lod-card-actions {
+    flex-direction: column;
   }
 }
